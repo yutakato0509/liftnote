@@ -1,0 +1,7 @@
+# ホームディレクトリで管理するため、対象ファイルだけを明示的に許可
+*
+
+# 以下のファイルのみ追跡
+!.gitignore
+!fitness-tracker.html
+!vercel.json
