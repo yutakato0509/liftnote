@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>筋トレ記録</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --accent:   #ff5500;
+  --accent2:  #ff2d55;
+  --primary:  #ff5500;
+  --green:    #00d46a;
+  --amber:    #ff9500;
+  --red:      #ff3b30;
+  --bg:       #080808;
+  --card:     #131313;
+  --card2:    #1a1a1a;
+  --text:     #efefef;
+  --sub:      #606060;
+  --border:   #242424;
+  --input-bg: #0f0f0f;
+  --nav-h:    62px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  min-height: 100vh;
+}
+
+/* ═══════════ HEADER ═══════════ */
+.header {
+  background: #000;
+  padding: 14px 18px 13px;
+  position: sticky; top: 0; z-index: 100;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid #1a1a1a;
+}
+.header-title {
+  font-size: 20px; font-weight: 900; letter-spacing: -0.5px;
+  color: #fff;
+  display: flex; align-items: center; gap: 7px;
+}
+.header-title .fire { font-size: 22px; }
+.header-title strong {
+  background: linear-gradient(90deg, #ff5500 0%, #ff2d55 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header-date {
+  text-align: right;
+}
+.header-date .day {
+  font-size: 13px; font-weight: 800; color: #fff;
+}
+.header-date .year {
+  font-size: 10px; color: var(--sub); margin-top: 1px;
+}
+
+/* ═══════════ VIEWS ═══════════ */
+.view { display: none; padding: 14px 14px 10px; }
+.view.active { display: block; }
+
+/* ═══════════ CARDS ═══════════ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+.card-label {
+  font-size: 10px; font-weight: 800;
+  color: var(--accent);
+  text-transform: uppercase; letter-spacing: .12em;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 7px;
+}
+.card-label::before {
+  content: '';
+  display: block; width: 10px; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 1px;
+}
+
+/* ═══════════ FORM ═══════════ */
+.field { margin-bottom: 12px; }
+.field label {
+  display: block; font-size: 10px; font-weight: 800;
+  color: var(--sub); margin-bottom: 7px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.field input, .field select, .field textarea {
+  width: 100%; padding: 13px 14px;
+  border: 1.5px solid var(--border); border-radius: 12px;
+  font-size: 16px; color: var(--text); background: var(--input-bg);
+  outline: none; transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none; font-family: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255,85,0,.15);
+}
+.field textarea { resize: vertical; min-height: 68px; line-height: 1.6; }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia(1) hue-rotate(0deg) saturate(3); cursor: pointer; }
+
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23606060' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+}
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+/* ═══════════ STAT INPUTS (row3 special style) ═══════════ */
+.stat-field {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 10px 10px; text-align: center;
+  position: relative;
+}
+.stat-field label {
+  font-size: 9px; font-weight: 800; color: var(--sub);
+  text-transform: uppercase; letter-spacing: .1em;
+  display: block; margin-bottom: 6px;
+}
+.stat-field input {
+  background: transparent; border: none; box-shadow: none;
+  text-align: center; font-size: 28px; font-weight: 900;
+  color: var(--accent); padding: 0; line-height: 1;
+  font-variant-numeric: tabular-nums; width: 100%;
+}
+.stat-field input:focus { border: none; box-shadow: none; }
+.stat-field input::placeholder { color: #333; font-size: 24px; }
+.stat-field .stat-unit {
+  font-size: 10px; color: var(--sub); font-weight: 700; margin-top: 3px;
+}
+
+/* ═══════════ BUTTONS ═══════════ */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 16px; border: none; border-radius: 14px;
+  font-size: 14px; font-weight: 800; cursor: pointer;
+  letter-spacing: .08em; text-transform: uppercase;
+  transition: transform .12s, box-shadow .15s, opacity .12s;
+  -webkit-appearance: none; font-family: inherit;
+}
+.btn:active { transform: scale(.96); opacity: .9; }
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff5500 0%, #ff2d55 100%);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(255,85,0,.4);
+}
+.btn-primary:active { box-shadow: 0 2px 10px rgba(255,85,0,.2); }
+
+.btn-green {
+  background: linear-gradient(135deg, #00d46a 0%, #00b359 100%);
+  color: #000;
+  box-shadow: 0 6px 24px rgba(0,212,106,.3);
+}
+
+.btn-amber {
+  background: linear-gradient(135deg, #ff9500 0%, #ff5500 100%);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(255,149,0,.35);
+}
+
+.btn-ghost {
+  background: transparent; border: 1px solid #2a2a2a;
+  color: var(--sub); font-size: 11px; padding: 7px 13px;
+  border-radius: 8px; width: auto; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em;
+  transition: all .18s;
+}
+.btn-ghost:active { background: rgba(255,59,48,.12); border-color: var(--red); color: var(--red); }
+
+/* ═══════════ RECORD CARDS ═══════════ */
+.rec-card {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 15px;
+  margin-bottom: 9px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+}
+.rec-card-body { flex: 1; min-width: 0; }
+.rec-card-name {
+  font-size: 16px; font-weight: 800; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+.rec-card-nums {
+  display: flex; align-items: baseline; gap: 2px; flex-wrap: wrap;
+}
+.rec-num { font-size: 26px; font-weight: 900; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
+.rec-num-g { color: var(--green); }
+.rec-unit { font-size: 11px; color: var(--sub); font-weight: 700; margin-right: 4px; }
+.rec-sep { font-size: 13px; color: #333; margin: 0 3px; }
+.rec-memo { font-size: 11px; color: var(--sub); margin-top: 5px; line-height: 1.4; }
+.rec-card-right {
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: 8px; flex-shrink: 0;
+}
+.rec-date { font-size: 10px; color: var(--sub); font-weight: 600; white-space: nowrap; }
+
+/* History list items */
+.rec-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 13px 0; border-bottom: 1px solid var(--border);
+}
+.rec-item:last-child { border-bottom: none; }
+.rec-icon {
+  width: 40px; height: 40px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.ic-w { background: rgba(255,85,0,.14); }
+.ic-c { background: rgba(0,212,106,.12); }
+.ic-b { background: rgba(255,149,0,.12); }
+.rec-body { flex: 1; min-width: 0; }
+.rec-title { font-size: 14px; font-weight: 800; color: var(--text); }
+.rec-detail { font-size: 12px; color: var(--sub); margin-top: 3px; line-height: 1.4; }
+.rec-right { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+
+/* ═══════════ SECTION TITLE ═══════════ */
+.section-title {
+  font-size: 11px; font-weight: 800; color: var(--sub);
+  margin: 8px 2px 12px;
+  display: flex; align-items: center; gap: 10px;
+  text-transform: uppercase; letter-spacing: .1em;
+}
+.section-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ═══════════ BODY WEIGHT HIGHLIGHT ═══════════ */
+.bw-hero {
+  display: flex; align-items: flex-end; gap: 4px; margin-bottom: 4px;
+}
+.bw-big {
+  font-size: 64px; font-weight: 900; line-height: .9;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, #ff9500 0%, #ff5500 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.bw-kg { font-size: 22px; font-weight: 700; color: var(--sub); margin-bottom: 6px; margin-left: 3px; }
+.bw-diff { font-size: 14px; font-weight: 800; margin-left: 8px; margin-bottom: 8px; }
+.bw-date { font-size: 12px; color: var(--sub); margin-top: 4px; }
+
+/* ═══════════ BOTTOM NAV ═══════════ */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  background: #000; border-top: 1px solid #1a1a1a;
+  display: flex; z-index: 200;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  cursor: pointer; color: #383838;
+  font-size: 9px; font-weight: 700; letter-spacing: .05em;
+  user-select: none; -webkit-user-select: none;
+  transition: color .2s; position: relative; text-transform: uppercase;
+}
+.nav-item .nav-icon { font-size: 21px; line-height: 1; transition: transform .2s filter .2s; }
+.nav-item.active { color: var(--accent); }
+.nav-item.active .nav-icon { transform: scale(1.18); filter: drop-shadow(0 0 6px rgba(255,85,0,.6)); }
+.nav-item.active::after {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 0 0 3px 3px;
+}
+
+/* ═══════════ FILTER CHIPS ═══════════ */
+.chips { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 8px 15px; border-radius: 20px;
+  border: 1.5px solid var(--border); font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; background: var(--card); color: var(--sub);
+  transition: all .18s; letter-spacing: .03em;
+}
+.chip.active {
+  border-color: var(--accent);
+  background: rgba(255,85,0,.12);
+  color: var(--accent);
+}
+
+/* ═══════════ GRAPH TABS ═══════════ */
+.tab-bar {
+  display: flex; background: var(--card2); border-radius: 13px;
+  padding: 4px; margin-bottom: 14px; border: 1px solid var(--border);
+}
+.tab-btn {
+  flex: 1; padding: 10px; border: none; border-radius: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  background: transparent; color: var(--sub); transition: all .2s; font-family: inherit;
+  letter-spacing: .03em;
+}
+.tab-btn.active {
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 2px 10px rgba(0,0,0,.5);
+}
+
+/* ═══════════ CHART ═══════════ */
+.chart-wrap { position: relative; height: 240px; }
+.chart-empty { text-align: center; padding: 50px 0; color: var(--sub); }
+.chart-empty .ei { font-size: 44px; margin-bottom: 10px; opacity: .3; display: block; }
+.chart-empty p { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+
+/* ═══════════ HISTORY DATE HEADER ═══════════ */
+.hist-sep {
+  font-size: 10px; font-weight: 800; color: var(--sub);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-bottom: 7px; padding: 0 2px;
+  display: flex; align-items: center; gap: 8px;
+}
+.hist-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ═══════════ TOAST ═══════════ */
+.toast {
+  position: fixed; top: 76px; left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: #1c1c1c; color: var(--text);
+  border: 1px solid #2e2e2e;
+  padding: 12px 20px; border-radius: 12px;
+  font-size: 13px; font-weight: 700; z-index: 999;
+  opacity: 0; transition: all .25s; pointer-events: none; white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,.7);
+  letter-spacing: .03em;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ═══════════ EMPTY STATE ═══════════ */
+.empty { text-align: center; padding: 44px 20px; color: var(--sub); }
+.empty .ei { font-size: 52px; margin-bottom: 12px; display: block; opacity: .25; }
+.empty p { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+
+/* ═══════════ AUTOFILL HINT ═══════════ */
+.autofill-hint {
+  font-size: 10px; color: var(--accent); margin-top: 6px; font-weight: 800;
+  display: none; letter-spacing: .05em; text-transform: uppercase;
+}
+
+/* ═══════════ GLOW LINE ═══════════ */
+.glow-line {
+  height: 1px; margin: 0 -18px 18px;
+  background: linear-gradient(90deg, transparent, rgba(255,85,0,.3) 40%, rgba(255,45,85,.3) 60%, transparent);
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-title">
+    <span class="fire">🔥</span>
+    <span>筋<strong>トレ</strong>記録</span>
+  </div>
+  <div class="header-date">
+    <div class="day" id="hdr-day"></div>
+    <div class="year" id="hdr-date"></div>
+  </div>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════
+     VIEW: ウエイトトレーニング
+════════════════════════════════════════ -->
+<div id="view-weight" class="view active">
+  <div class="card">
+    <div class="card-label">Weight Training</div>
+    <div class="glow-line"></div>
+
+    <div class="field">
+      <label>種目名</label>
+      <input type="text" id="w-exercise" list="ex-list" placeholder="例: ベンチプレス"
+             oninput="onExerciseInput(this.value)">
+      <datalist id="ex-list">
+        <option value="ベンチプレス"><option value="インクラインプレス"><option value="デクラインプレス">
+        <option value="スクワット"><option value="フロントスクワット"><option value="レッグプレス">
+        <option value="デッドリフト"><option value="ルーマニアンデッドリフト">
+        <option value="ショルダープレス"><option value="サイドレイズ"><option value="フロントレイズ">
+        <option value="ラットプルダウン"><option value="チンアップ"><option value="ベントオーバーロウ">
+        <option value="シーテッドロウ"><option value="バーベルロウ">
+        <option value="ダンベルカール"><option value="バーベルカール"><option value="ハンマーカール">
+        <option value="トライセプスエクステンション"><option value="ディップス"><option value="ケーブルプッシュダウン">
+        <option value="レッグカール"><option value="レッグエクステンション"><option value="カーフレイズ">
+        <option value="クランチ"><option value="レッグレイズ"><option value="プランク">
+        <option value="チェストフライ"><option value="ペックデック">
+      </datalist>
+      <div class="autofill-hint" id="autofill-hint">⚡ 前回の記録を自動入力しました</div>
+    </div>
+
+    <div class="row3">
+      <div class="stat-field">
+        <label>重量</label>
+        <input type="number" id="w-weight" placeholder="60" min="0" step="0.5">
+        <div class="stat-unit">kg</div>
+      </div>
+      <div class="stat-field">
+        <label>回数</label>
+        <input type="number" id="w-reps" placeholder="10" min="1">
+        <div class="stat-unit">reps</div>
+      </div>
+      <div class="stat-field">
+        <label>セット</label>
+        <input type="number" id="w-sets" placeholder="3" min="1">
+        <div class="stat-unit">sets</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:4px;">
+      <label>日付</label>
+      <input type="date" id="w-date">
+    </div>
+
+    <div class="field">
+      <label>メモ (任意)</label>
+      <textarea id="w-memo" placeholder="フォームの調子、気づきなど..."></textarea>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveWeight()">REC ＋ 記録する</button>
+  </div>
+
+  <div class="section-title">最近のログ</div>
+  <div id="w-recent"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     VIEW: 有酸素
+════════════════════════════════════════ -->
+<div id="view-cardio" class="view">
+  <div class="card">
+    <div class="card-label">Cardio</div>
+    <div class="glow-line" style="background: linear-gradient(90deg, transparent, rgba(0,212,106,.25) 50%, transparent);"></div>
+
+    <div class="field">
+      <label>種類</label>
+      <select id="c-type">
+        <option>ランニング</option><option>ウォーキング</option>
+        <option>サイクリング</option><option>水泳</option>
+        <option>縄跳び</option><option>エリプティカル</option>
+        <option>ローイングマシン</option><option>HIIT</option>
+        <option>その他</option>
+      </select>
+    </div>
+
+    <div class="row2">
+      <div class="stat-field">
+        <label>時間</label>
+        <input type="number" id="c-duration" placeholder="30" min="1"
+               style="color:var(--green);">
+        <div class="stat-unit">分</div>
+      </div>
+      <div class="stat-field">
+        <label>距離</label>
+        <input type="number" id="c-distance" placeholder="5.0" min="0" step="0.1"
+               style="color:var(--green);">
+        <div class="stat-unit">km</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:4px;">
+      <label>日付</label>
+      <input type="date" id="c-date">
+    </div>
+
+    <button class="btn btn-green" onclick="saveCardio()">REC ＋ 記録する</button>
+  </div>
+
+  <div class="section-title">最近のログ</div>
+  <div id="c-recent"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     VIEW: 体重
+════════════════════════════════════════ -->
+<div id="view-body" class="view">
+  <div id="bw-latest-card" class="card" style="display:none;">
+    <div class="card-label" style="color:var(--amber);">Current Weight</div>
+    <div class="glow-line" style="background: linear-gradient(90deg, transparent, rgba(255,149,0,.25) 50%, transparent);"></div>
+    <div id="bw-latest"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label" style="color:var(--amber);">Body Weight</div>
+    <div class="glow-line" style="background: linear-gradient(90deg, transparent, rgba(255,149,0,.25) 50%, transparent);"></div>
+
+    <div class="stat-field" style="margin-bottom:12px;">
+      <label>体重</label>
+      <input type="number" id="b-weight" placeholder="70.0" min="1" step="0.1"
+             style="font-size:44px;color:var(--amber);text-align:center;">
+      <div class="stat-unit">kg</div>
+    </div>
+
+    <div class="field">
+      <label>日付</label>
+      <input type="date" id="b-date">
+    </div>
+
+    <button class="btn btn-amber" onclick="saveBody()">REC ＋ 記録する</button>
+  </div>
+
+  <div class="section-title">最近のログ</div>
+  <div id="b-recent"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     VIEW: 履歴
+════════════════════════════════════════ -->
+<div id="view-history" class="view">
+  <div class="chips">
+    <div class="chip active" onclick="setFilter('all',this)">ALL</div>
+    <div class="chip" onclick="setFilter('weight',this)">💪 ウエイト</div>
+    <div class="chip" onclick="setFilter('cardio',this)">🏃 有酸素</div>
+    <div class="chip" onclick="setFilter('body',this)">⚖️ 体重</div>
+  </div>
+  <div id="hist-list"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     VIEW: グラフ
+════════════════════════════════════════ -->
+<div id="view-graph" class="view">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="gTab('bw',this)">体重推移</button>
+    <button class="tab-btn" onclick="gTab('ex',this)">種目推移</button>
+  </div>
+
+  <div id="g-bw">
+    <div class="card">
+      <div class="card-label" style="color:var(--amber);">Body Weight Trend</div>
+      <div class="glow-line" style="background: linear-gradient(90deg, transparent, rgba(255,149,0,.2) 50%, transparent);"></div>
+      <div class="chart-wrap" id="bw-chart-wrap">
+        <canvas id="bw-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="g-ex" style="display:none;">
+    <div class="card">
+      <div class="field" style="margin-bottom:0;">
+        <label>種目を選択</label>
+        <select id="ex-sel" onchange="drawExChart()">
+          <option value="">-- 種目を選んでください --</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" id="ex-chart-card" style="display:none;">
+      <div class="card-label" id="ex-chart-label">Max Weight Trend</div>
+      <div class="glow-line"></div>
+      <div class="chart-wrap" id="ex-chart-wrap">
+        <canvas id="ex-chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     BOTTOM NAV
+════════════════════════════════════════ -->
+<nav class="bottom-nav">
+  <div class="nav-item active" onclick="nav('weight',this)">
+    <span class="nav-icon">💪</span>ウエイト
+  </div>
+  <div class="nav-item" onclick="nav('cardio',this)">
+    <span class="nav-icon">🏃</span>有酸素
+  </div>
+  <div class="nav-item" onclick="nav('body',this)">
+    <span class="nav-icon">⚖️</span>体重
+  </div>
+  <div class="nav-item" onclick="nav('history',this)">
+    <span class="nav-icon">📋</span>履歴
+  </div>
+  <div class="nav-item" onclick="nav('graph',this)">
+    <span class="nav-icon">📈</span>グラフ
+  </div>
+</nav>
+
+<script>
+/* ─────────────────────────────────────────
+   STORAGE
+───────────────────────────────────────── */
+const K = { w: 'ft_weights', c: 'ft_cardio', b: 'ft_body' };
+
+function load(k)    { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } }
+function save(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
+
+/* ─────────────────────────────────────────
+   UTILS
+───────────────────────────────────────── */
+function uid()   { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function today() { return new Date().toISOString().slice(0,10); }
+
+function fmtDateFull(s) {
+  if (!s) return '';
+  const d = new Date(s + 'T00:00:00');
+  const wd = ['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getMonth()+1}/${d.getDate()}(${wd})`;
+}
+function fmtDateShort(s) {
+  if (!s) return '';
+  const d = new Date(s + 'T00:00:00');
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  const d  = new Date();
+  const wd = ['日','月','火','水','木','金','土'][d.getDay()];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('hdr-day').textContent  = `${d.getDate()} ${months[d.getMonth()]} (${wd})`;
+  document.getElementById('hdr-date').textContent = `${d.getFullYear()}`;
+
+  const t = today();
+  ['w-date','c-date','b-date'].forEach(id => document.getElementById(id).value = t);
+
+  renderWRecent();
+  renderCRecent();
+  renderBRecent();
+});
+
+/* ─────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────── */
+let curFilter = 'all';
+let bwChart = null, exChart = null;
+
+function nav(view, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  el.classList.add('active');
+
+  if (view === 'history') renderHistory();
+  if (view === 'graph')   { fillExSel(); setTimeout(drawBwChart, 80); }
+}
+
+/* ─────────────────────────────────────────
+   AUTO-FILL LAST EXERCISE
+───────────────────────────────────────── */
+function onExerciseInput(val) {
+  if (!val.trim()) { document.getElementById('autofill-hint').style.display='none'; return; }
+  const records = load(K.w).filter(r => r.exercise === val.trim());
+  if (!records.length) { document.getElementById('autofill-hint').style.display='none'; return; }
+  records.sort((a,b) => b.date.localeCompare(a.date));
+  const last = records[0];
+  if (last.weight) document.getElementById('w-weight').value = last.weight;
+  if (last.reps)   document.getElementById('w-reps').value   = last.reps;
+  if (last.sets)   document.getElementById('w-sets').value   = last.sets;
+  document.getElementById('autofill-hint').style.display = 'block';
+}
+
+/* ─────────────────────────────────────────
+   WEIGHT TRAINING
+───────────────────────────────────────── */
+function saveWeight() {
+  const exercise = document.getElementById('w-exercise').value.trim();
+  const weight   = parseFloat(document.getElementById('w-weight').value);
+  const reps     = parseInt(document.getElementById('w-reps').value);
+  const sets     = parseInt(document.getElementById('w-sets').value);
+  const date     = document.getElementById('w-date').value;
+  const memo     = document.getElementById('w-memo').value.trim();
+
+  if (!exercise)         { alert('種目名を入力してください'); return; }
+  if (!date)             { alert('日付を入力してください'); return; }
+  if (!reps || reps < 1) { alert('回数を入力してください'); return; }
+  if (!sets || sets < 1) { alert('セット数を入力してください'); return; }
+
+  const arr = load(K.w);
+  arr.push({ id: uid(), date, exercise, weight: isNaN(weight) ? 0 : weight, reps, sets, memo });
+  save(K.w, arr);
+
+  document.getElementById('w-exercise').value = '';
+  document.getElementById('w-weight').value   = '';
+  document.getElementById('w-reps').value     = '';
+  document.getElementById('w-sets').value     = '';
+  document.getElementById('w-memo').value     = '';
+  document.getElementById('w-date').value     = today();
+  document.getElementById('autofill-hint').style.display = 'none';
+
+  toast('🔥 記録しました！');
+  renderWRecent();
+}
+
+function renderWRecent() {
+  const recs = load(K.w).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
+  const el   = document.getElementById('w-recent');
+  if (!recs.length) { el.innerHTML = emptyHTML('🏋️','NO RECORDS YET'); return; }
+
+  el.innerHTML = recs.map(r => {
+    const wt   = r.weight > 0;
+    const nums = wt
+      ? `<span class="rec-num">${r.weight}</span><span class="rec-unit">kg</span>
+         <span class="rec-sep">×</span>
+         <span class="rec-num" style="color:var(--text);font-size:20px;">${r.reps}</span><span class="rec-unit">回</span>
+         <span class="rec-sep">×</span>
+         <span class="rec-num" style="color:var(--text);font-size:20px;">${r.sets}</span><span class="rec-unit">set</span>`
+      : `<span class="rec-unit">自重</span>
+         <span class="rec-sep">×</span>
+         <span class="rec-num" style="font-size:20px;">${r.reps}</span><span class="rec-unit">回</span>
+         <span class="rec-sep">×</span>
+         <span class="rec-num" style="font-size:20px;">${r.sets}</span><span class="rec-unit">set</span>`;
+    return `
+      <div class="rec-card">
+        <div class="rec-card-body">
+          <div class="rec-card-name">${esc(r.exercise)}</div>
+          <div class="rec-card-nums">${nums}</div>
+          ${r.memo ? `<div class="rec-memo">📝 ${esc(r.memo)}</div>` : ''}
+        </div>
+        <div class="rec-card-right">
+          <div class="rec-date">${fmtDateFull(r.date)}</div>
+          <button class="btn btn-ghost" onclick="delRec('${K.w}','${r.id}',renderWRecent)">DEL</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────
+   CARDIO
+───────────────────────────────────────── */
+function saveCardio() {
+  const type     = document.getElementById('c-type').value;
+  const duration = parseInt(document.getElementById('c-duration').value);
+  const distance = parseFloat(document.getElementById('c-distance').value);
+  const date     = document.getElementById('c-date').value;
+
+  if (!date)                   { alert('日付を入力してください'); return; }
+  if (!duration || duration<1) { alert('時間を入力してください'); return; }
+
+  const arr = load(K.c);
+  arr.push({ id: uid(), date, type, duration, distance: isNaN(distance) ? 0 : distance });
+  save(K.c, arr);
+
+  document.getElementById('c-duration').value = '';
+  document.getElementById('c-distance').value = '';
+  document.getElementById('c-date').value     = today();
+
+  toast('🔥 記録しました！');
+  renderCRecent();
+}
+
+function renderCRecent() {
+  const recs = load(K.c).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,15);
+  const el   = document.getElementById('c-recent');
+  if (!recs.length) { el.innerHTML = emptyHTML('🏃','NO RECORDS YET'); return; }
+
+  el.innerHTML = recs.map(r => `
+    <div class="rec-card">
+      <div class="rec-card-body">
+        <div class="rec-card-name">${esc(r.type)}</div>
+        <div class="rec-card-nums">
+          <span class="rec-num rec-num-g">${r.duration}</span><span class="rec-unit">分</span>
+          ${r.distance > 0
+            ? `<span class="rec-sep">·</span><span class="rec-num rec-num-g">${r.distance}</span><span class="rec-unit">km</span>`
+            : ''}
+        </div>
+      </div>
+      <div class="rec-card-right">
+        <div class="rec-date">${fmtDateFull(r.date)}</div>
+        <button class="btn btn-ghost" onclick="delRec('${K.c}','${r.id}',renderCRecent)">DEL</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ─────────────────────────────────────────
+   BODY WEIGHT
+───────────────────────────────────────── */
+function saveBody() {
+  const weight = parseFloat(document.getElementById('b-weight').value);
+  const date   = document.getElementById('b-date').value;
+
+  if (!date)               { alert('日付を入力してください'); return; }
+  if (isNaN(weight)||weight<=0) { alert('体重を入力してください'); return; }
+
+  const arr = load(K.b);
+  arr.push({ id: uid(), date, weight });
+  save(K.b, arr);
+
+  document.getElementById('b-weight').value = '';
+  document.getElementById('b-date').value   = today();
+
+  toast('🔥 記録しました！');
+  renderBRecent();
+}
+
+function renderBRecent() {
+  const all  = load(K.b).sort((a,b)=>b.date.localeCompare(a.date));
+  const recs = all.slice(0,15);
+
+  const lc = document.getElementById('bw-latest-card');
+  const ld = document.getElementById('bw-latest');
+
+  if (all.length > 0) {
+    lc.style.display = 'block';
+    const cur  = all[0];
+    const prev = all[1];
+    const diff = prev ? (cur.weight - prev.weight) : null;
+    let diffHTML = '';
+    if (diff !== null) {
+      const sign  = diff > 0 ? '▲' : diff < 0 ? '▼' : '±';
+      const color = diff > 0 ? 'var(--red)' : diff < 0 ? 'var(--green)' : 'var(--sub)';
+      diffHTML = `<span class="bw-diff" style="color:${color};">${sign}${Math.abs(diff).toFixed(1)}kg</span>`;
+    }
+    ld.innerHTML = `
+      <div class="bw-hero">
+        <span class="bw-big">${cur.weight}</span>
+        <span class="bw-kg">kg</span>
+        ${diffHTML}
+      </div>
+      <div class="bw-date">${fmtDateFull(cur.date)}</div>`;
+  } else {
+    lc.style.display = 'none';
+  }
+
+  const el = document.getElementById('b-recent');
+  if (!recs.length) { el.innerHTML = emptyHTML('⚖️','NO RECORDS YET'); return; }
+
+  el.innerHTML = recs.map(r => `
+    <div class="rec-card">
+      <div class="rec-card-body">
+        <div class="rec-card-nums">
+          <span class="rec-num" style="font-size:32px;color:var(--amber);">${r.weight}</span>
+          <span class="rec-unit" style="font-size:14px;">kg</span>
+        </div>
+      </div>
+      <div class="rec-card-right">
+        <div class="rec-date">${fmtDateFull(r.date)}</div>
+        <button class="btn btn-ghost" onclick="delRec('${K.b}','${r.id}',renderBRecent)">DEL</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ─────────────────────────────────────────
+   HISTORY
+───────────────────────────────────────── */
+function setFilter(f, el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  curFilter = f;
+  renderHistory();
+}
+
+function renderHistory() {
+  const weights = load(K.w).map(r=>({...r,_t:'weight'}));
+  const cardios = load(K.c).map(r=>({...r,_t:'cardio'}));
+  const bodies  = load(K.b).map(r=>({...r,_t:'body'}));
+
+  let all = { all:[...weights,...cardios,...bodies], weight:weights, cardio:cardios, body:bodies }[curFilter];
+  all.sort((a,b)=>b.date.localeCompare(a.date));
+
+  const el = document.getElementById('hist-list');
+  if (!all.length) { el.innerHTML = emptyHTML('📋','NO RECORDS YET'); return; }
+
+  const grouped = {};
+  all.forEach(r => { (grouped[r.date] = grouped[r.date]||[]).push(r); });
+  const dates = Object.keys(grouped).sort((a,b)=>b.localeCompare(a));
+
+  el.innerHTML = dates.map(date => `
+    <div style="margin-bottom:14px;">
+      <div class="hist-sep">📅 ${fmtDateFull(date)}</div>
+      <div class="card" style="padding:8px 14px;">
+        ${grouped[date].map(r => histItem(r)).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function histItem(r) {
+  const delKey = r._t==='weight' ? K.w : r._t==='cardio' ? K.c : K.b;
+
+  if (r._t === 'weight') return `
+    <div class="rec-item">
+      <div class="rec-icon ic-w">💪</div>
+      <div class="rec-body">
+        <div class="rec-title">${esc(r.exercise)}</div>
+        <div class="rec-detail">${r.weight > 0 ? r.weight+'kg × ' : '自重 × '}${r.reps}回 × ${r.sets}セット</div>
+        ${r.memo ? `<div class="rec-detail">📝 ${esc(r.memo)}</div>` : ''}
+      </div>
+      <div class="rec-right">
+        <button class="btn btn-ghost" onclick="delRec('${delKey}','${r.id}',renderHistory)">DEL</button>
+      </div>
+    </div>`;
+
+  if (r._t === 'cardio') return `
+    <div class="rec-item">
+      <div class="rec-icon ic-c">🏃</div>
+      <div class="rec-body">
+        <div class="rec-title">${esc(r.type)}</div>
+        <div class="rec-detail">${r.duration}分${r.distance > 0 ? ' · '+r.distance+'km' : ''}</div>
+      </div>
+      <div class="rec-right">
+        <button class="btn btn-ghost" onclick="delRec('${delKey}','${r.id}',renderHistory)">DEL</button>
+      </div>
+    </div>`;
+
+  return `
+    <div class="rec-item">
+      <div class="rec-icon ic-b">⚖️</div>
+      <div class="rec-body">
+        <div class="rec-title">体重</div>
+        <div class="rec-detail">${r.weight} kg</div>
+      </div>
+      <div class="rec-right">
+        <button class="btn btn-ghost" onclick="delRec('${delKey}','${r.id}',renderHistory)">DEL</button>
+      </div>
+    </div>`;
+}
+
+/* ─────────────────────────────────────────
+   GRAPHS
+───────────────────────────────────────── */
+function gTab(tab, el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('g-bw').style.display = tab==='bw' ? 'block' : 'none';
+  document.getElementById('g-ex').style.display = tab==='ex' ? 'block' : 'none';
+  if (tab==='bw') setTimeout(drawBwChart, 60);
+  if (tab==='ex') fillExSel();
+}
+
+function resetChartWrap(wrapId, canvasId) {
+  const wrap = document.getElementById(wrapId);
+  wrap.innerHTML = `<canvas id="${canvasId}"></canvas>`;
+  return document.getElementById(canvasId);
+}
+
+function chartOpts(unit) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1c1c1c',
+        borderColor: '#333', borderWidth: 1,
+        titleColor: '#efefef', bodyColor: '#efefef',
+        padding: 10,
+        callbacks: { label: ctx => `  ${ctx.raw} ${unit}` }
+      }
+    },
+    scales: {
+      y: {
+        grid: { color: 'rgba(255,255,255,.05)' },
+        ticks: { color: '#505050', font: { size: 11, weight: '700' }, callback: v => v+unit },
+        border: { color: 'transparent' }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { color: '#505050', font: { size: 11, weight: '700' } },
+        border: { color: 'transparent' }
+      }
+    }
+  };
+}
+
+function drawBwChart() {
+  if (bwChart) { bwChart.destroy(); bwChart = null; }
+  const recs   = load(K.b).sort((a,b)=>a.date.localeCompare(b.date));
+  const canvas = resetChartWrap('bw-chart-wrap','bw-chart');
+
+  if (!recs.length) {
+    document.getElementById('bw-chart-wrap').innerHTML =
+      `<div class="chart-empty"><span class="ei">📈</span><p>BODY WEIGHT RECORDS NEEDED</p></div>`;
+    return;
+  }
+
+  bwChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: recs.map(r => fmtDateShort(r.date)),
+      datasets: [{
+        label: '体重',
+        data:  recs.map(r => r.weight),
+        borderColor: '#ff9500',
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+          g.addColorStop(0, 'rgba(255,149,0,.25)');
+          g.addColorStop(1, 'rgba(255,149,0,.01)');
+          return g;
+        },
+        fill: true, tension: 0.4,
+        pointBackgroundColor: '#ff9500',
+        pointBorderColor: '#080808', pointBorderWidth: 2,
+        pointRadius: 5, pointHoverRadius: 8,
+        borderWidth: 2.5,
+      }]
+    },
+    options: chartOpts('kg')
+  });
+}
+
+function fillExSel() {
+  const exercises = [...new Set(load(K.w).map(r=>r.exercise))].sort();
+  const sel = document.getElementById('ex-sel');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">-- 種目を選んでください --</option>' +
+    exercises.map(e => `<option${e===cur?' selected':''}>${e}</option>`).join('');
+  if (cur && exercises.includes(cur)) drawExChart();
+}
+
+function drawExChart() {
+  if (exChart) { exChart.destroy(); exChart = null; }
+  const exercise = document.getElementById('ex-sel').value;
+  const card     = document.getElementById('ex-chart-card');
+  if (!exercise) { card.style.display='none'; return; }
+
+  card.style.display = 'block';
+  document.getElementById('ex-chart-label').textContent = `${exercise} — MAX WEIGHT TREND`;
+
+  const recs = load(K.w).filter(r => r.exercise === exercise);
+  const byDate = {};
+  recs.forEach(r => {
+    if (!byDate[r.date] || r.weight > byDate[r.date]) byDate[r.date] = r.weight;
+  });
+  const dates  = Object.keys(byDate).sort((a,b)=>a.localeCompare(b));
+  const canvas = resetChartWrap('ex-chart-wrap','ex-chart');
+
+  if (!dates.length) {
+    document.getElementById('ex-chart-wrap').innerHTML =
+      `<div class="chart-empty"><span class="ei">📊</span><p>NO DATA</p></div>`;
+    return;
+  }
+
+  exChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: dates.map(fmtDateShort),
+      datasets: [{
+        label: '最大重量',
+        data:  dates.map(d => byDate[d]),
+        borderColor: '#ff5500',
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+          g.addColorStop(0, 'rgba(255,85,0,.25)');
+          g.addColorStop(1, 'rgba(255,85,0,.01)');
+          return g;
+        },
+        fill: true, tension: 0.4,
+        pointBackgroundColor: '#ff5500',
+        pointBorderColor: '#080808', pointBorderWidth: 2,
+        pointRadius: 5, pointHoverRadius: 8,
+        borderWidth: 2.5,
+      }]
+    },
+    options: chartOpts('kg')
+  });
+}
+
+/* ─────────────────────────────────────────
+   DELETE
+───────────────────────────────────────── */
+function delRec(key, id, cb) {
+  if (!confirm('この記録を削除しますか？')) return;
+  save(key, load(key).filter(r => r.id !== id));
+  toast('🗑️ 削除しました');
+  if (typeof cb === 'function') cb();
+}
+
+/* ─────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────── */
+function emptyHTML(icon, msg) {
+  return `<div class="empty"><span class="ei">${icon}</span><p>${msg}</p></div>`;
+}
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
