@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>筋トレ記録</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -455,6 +458,66 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .heart-btn.visible   { display: flex; }
 .heart-btn.favorited { background: rgba(255,45,85,.12); border-color: #ff2d55; }
 .heart-btn:active    { transform: scale(.88); }
+
+/* ═══════════ AUTH / SYNC ═══════════ */
+.header-right {
+  display: flex; align-items: center; gap: 10px;
+}
+.sync-icon {
+  font-size: 18px; cursor: pointer; line-height: 1;
+  color: var(--sub); transition: color .2s, transform .4s;
+  user-select: none; -webkit-user-select: none;
+}
+.sync-icon.syncing { animation: spin 1s linear infinite; color: var(--accent); }
+.sync-icon.ok  { color: var(--green); }
+.sync-icon.err { color: var(--red); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.auth-btn {
+  padding: 7px 14px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; font-size: 12px; font-weight: 800;
+  border: none; cursor: pointer; font-family: inherit;
+  letter-spacing: .04em; white-space: nowrap;
+  -webkit-appearance: none;
+}
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; color: #fff;
+  cursor: pointer; flex-shrink: 0; overflow: hidden;
+}
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* User menu modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 500;
+  display: none; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--card); border-radius: 20px 20px 0 0;
+  padding: 16px 20px calc(20px + env(safe-area-inset-bottom,0px));
+  width: 100%; max-width: 480px;
+}
+.modal-handle {
+  width: 36px; height: 4px; background: #333; border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.modal-user-name { font-size: 16px; font-weight: 800; color: var(--text); }
+.modal-user-email { font-size: 12px; color: var(--sub); margin-top: 3px; margin-bottom: 18px; }
+.modal-btn {
+  width: 100%; padding: 14px; border-radius: 12px;
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+  margin-bottom: 8px; -webkit-appearance: none;
+}
+.modal-btn-sync { background: rgba(255,85,0,.1); color: var(--accent); border: 1px solid rgba(255,85,0,.2); }
+.modal-btn-out  { background: rgba(255,59,48,.08); color: var(--red); border: 1px solid rgba(255,59,48,.18); }
+.modal-close {
+  width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px;
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+  background: var(--card2); color: var(--sub); margin-top: 4px; -webkit-appearance: none;
+}
 </style>
 </head>
 <body>
@@ -465,9 +528,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <span class="fire">🔥</span>
     <span>筋<strong>トレ</strong>記録</span>
   </div>
-  <div class="header-date">
-    <div class="day" id="hdr-day"></div>
-    <div class="year" id="hdr-date"></div>
+  <div class="header-right">
+    <span class="sync-icon" id="sync-icon" title="同期状態" onclick="openUserMenu()" style="display:none;">⟳</span>
+    <button class="auth-btn" id="auth-btn" onclick="signInWithGoogle()" style="display:none;">ログイン</button>
+    <div class="user-avatar" id="user-avatar" onclick="openUserMenu()" style="display:none;"></div>
+    <div class="header-date">
+      <div class="day" id="hdr-day"></div>
+      <div class="year" id="hdr-date"></div>
+    </div>
   </div>
 </header>
 
@@ -728,6 +796,20 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   </div>
 </nav>
 
+<!-- USER MENU MODAL -->
+<div class="modal-overlay" id="user-modal" onclick="closeUserMenu(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="modal-user-info">
+      <div class="modal-user-name" id="modal-user-name"></div>
+      <div class="modal-user-email" id="modal-user-email"></div>
+    </div>
+    <button class="modal-btn modal-btn-sync" onclick="forcePush()">⟳ 今すぐ同期</button>
+    <button class="modal-btn modal-btn-out" onclick="signOut()">ログアウト</button>
+    <button class="modal-close" onclick="closeUserMenu()">キャンセル</button>
+  </div>
+</div>
+
 <script>
 /* ─────────────────────────────────────────
    STORAGE
@@ -735,7 +817,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 const K = { w: 'ft_weights', c: 'ft_cardio', b: 'ft_body', favs: 'ft_favs' };
 
 function load(k)    { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } }
-function save(k, d) { localStorage.setItem(k, JSON.stringify(d)); }
+function save(k, d) { localStorage.setItem(k, JSON.stringify(d)); scheduleSync(); }
 
 /* ─────────────────────────────────────────
    UTILS
@@ -792,6 +874,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderWRecent();
   renderCRecent();
   renderBRecent();
+  initFirebase();
 });
 
 /* ─────────────────────────────────────────
@@ -1439,6 +1522,176 @@ function emptyHTML(icon, msg) {
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─────────────────────────────────────────
+   FIREBASE CONFIG
+   ▶ セットアップ手順:
+     1. https://console.firebase.google.com/ でプロジェクト作成
+     2. 「ウェブアプリを追加」→ 設定値をコピー
+     3. 下の YOUR_*** を実際の値に書き換える
+     4. Authentication → Sign-in method → Google を有効化
+     5. Firestore Database → 作成（本番モードでOK）
+     6. Firestore → ルール を以下に設定:
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /users/{uid} {
+              allow read, write: if request.auth != null && request.auth.uid == uid;
+            }
+          }
+        }
+───────────────────────────────────────── */
+const FIREBASE_CONFIG = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+/* ─────────────────────────────────────────
+   FIREBASE INIT
+───────────────────────────────────────── */
+let fbAuth = null, fbDb = null, syncTimer = null;
+
+function initFirebase() {
+  if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return; // 未設定ならスキップ
+  firebase.initializeApp(FIREBASE_CONFIG);
+  fbAuth = firebase.auth();
+  fbDb   = firebase.firestore();
+  // オフライン永続化（圏外でも記録でき、復帰時に自動同期）
+  fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+  // 認証状態の変化を監視
+  fbAuth.onAuthStateChanged(user => {
+    if (user) {
+      showUserUI(user);
+      pullFromFirestore(user.uid);
+    } else {
+      showAuthBtn();
+    }
+  });
+}
+
+/* ─────────────────────────────────────────
+   AUTH UI
+───────────────────────────────────────── */
+function showAuthBtn() {
+  document.getElementById('auth-btn').style.display    = 'block';
+  document.getElementById('user-avatar').style.display = 'none';
+  document.getElementById('sync-icon').style.display   = 'none';
+}
+
+function showUserUI(user) {
+  document.getElementById('auth-btn').style.display    = 'none';
+  document.getElementById('sync-icon').style.display   = 'inline';
+  const av = document.getElementById('user-avatar');
+  av.style.display = 'flex';
+  av.innerHTML = user.photoURL
+    ? `<img src="${esc(user.photoURL)}" alt="">`
+    : esc((user.displayName || user.email || '?')[0].toUpperCase());
+}
+
+function signInWithGoogle() {
+  if (!fbAuth) return;
+  fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(err => toast('❌ ログイン失敗: ' + err.code));
+}
+
+function signOut() {
+  if (!fbAuth) return;
+  fbAuth.signOut().then(() => { closeUserMenu(); toast('👋 ログアウトしました'); });
+}
+
+function openUserMenu() {
+  if (!fbAuth || !fbAuth.currentUser) return;
+  const u = fbAuth.currentUser;
+  document.getElementById('modal-user-name').textContent  = u.displayName || 'ユーザー';
+  document.getElementById('modal-user-email').textContent = u.email || '';
+  document.getElementById('user-modal').classList.add('open');
+}
+
+function closeUserMenu(e) {
+  if (e && e.target !== document.getElementById('user-modal')) return;
+  document.getElementById('user-modal').classList.remove('open');
+}
+
+/* ─────────────────────────────────────────
+   SYNC (debounce 1.8s after save)
+───────────────────────────────────────── */
+function scheduleSync() {
+  if (!fbDb || !fbAuth || !fbAuth.currentUser) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(pushToFirestore, 1800);
+}
+
+function setSyncState(state) {
+  const el = document.getElementById('sync-icon');
+  el.className = 'sync-icon ' + state;
+  el.textContent = state === 'ok' ? '✓' : state === 'err' ? '!' : '⟳';
+}
+
+async function pushToFirestore() {
+  if (!fbDb || !fbAuth || !fbAuth.currentUser) return;
+  setSyncState('syncing');
+  try {
+    await fbDb.collection('users').doc(fbAuth.currentUser.uid).set({
+      weights:   load(K.w),
+      cardio:    load(K.c),
+      body:      load(K.b),
+      favs:      load(K.favs),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    setSyncState('ok');
+    setTimeout(() => setSyncState(''), 3000);
+  } catch (e) {
+    setSyncState('err');
+    console.error('Firestore push error:', e);
+  }
+}
+
+async function pullFromFirestore(uid) {
+  if (!fbDb) return;
+  try {
+    const doc = await fbDb.collection('users').doc(uid).get();
+    if (!doc.exists) {
+      // 初回ログイン: ローカルデータをそのままpush
+      pushToFirestore();
+      return;
+    }
+    const data = doc.data();
+    // ID単位でマージ（ローカル優先）
+    const mw   = mergeById(load(K.w),    data.weights || []);
+    const mc   = mergeById(load(K.c),    data.cardio  || []);
+    const mb   = mergeById(load(K.b),    data.body    || []);
+    const mf   = [...new Set([...load(K.favs), ...(data.favs || [])])];
+    // localStorage に直接書き込み（scheduleSync を再トリガーしない）
+    localStorage.setItem(K.w,    JSON.stringify(mw));
+    localStorage.setItem(K.c,    JSON.stringify(mc));
+    localStorage.setItem(K.b,    JSON.stringify(mb));
+    localStorage.setItem(K.favs, JSON.stringify(mf));
+    // UI再描画
+    renderFavChips(); renderWRecent(); renderCRecent(); renderBRecent();
+    setSyncState('ok');
+    toast('☁️ データを同期しました');
+    setTimeout(() => setSyncState(''), 3000);
+  } catch (e) {
+    console.error('Firestore pull error:', e);
+    setSyncState('err');
+  }
+}
+
+function mergeById(local, remote) {
+  const map = {};
+  remote.forEach(r => { map[r.id] = r; });
+  local.forEach(r  => { map[r.id] = r; }); // ローカル優先
+  return Object.values(map);
+}
+
+function forcePush() {
+  closeUserMenu();
+  pushToFirestore().then(() => toast('☁️ 同期しました'));
 }
 </script>
 </body>
