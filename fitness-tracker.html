@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -1666,9 +1667,10 @@ function esc(s) {
 }
 
 /* ─────────────────────────────────────────
-   PHOTO (IndexedDB)
+   PHOTO (IndexedDB + Firebase Storage)
 ───────────────────────────────────────── */
 let photoDB = null;
+let photoCache = {}; // id -> { src, date, storageUrl }
 
 function openPhotoDB() {
   return new Promise((resolve, reject) => {
@@ -1692,7 +1694,6 @@ function dbAll() {
     req.onerror   = e => reject(e);
   }));
 }
-
 function dbAdd(record) {
   return openPhotoDB().then(db => new Promise((resolve, reject) => {
     const req = db.transaction('photos','readwrite').objectStore('photos').add(record);
@@ -1700,7 +1701,6 @@ function dbAdd(record) {
     req.onerror   = e => reject(e);
   }));
 }
-
 function dbDel(id) {
   return openPhotoDB().then(db => new Promise((resolve, reject) => {
     const req = db.transaction('photos','readwrite').objectStore('photos').delete(id);
@@ -1728,12 +1728,60 @@ function compressImage(file, maxW, quality) {
   });
 }
 
+// Firestore photo metadata
+async function getCloudPhotos() {
+  if (!fbDb || !fbAuth || !fbAuth.currentUser) return [];
+  try {
+    const doc = await fbDb.collection('users').doc(fbAuth.currentUser.uid).get();
+    return doc.exists ? (doc.data().photos || []) : [];
+  } catch { return []; }
+}
+async function savePhotoMeta(meta) {
+  if (!fbDb || !fbAuth || !fbAuth.currentUser) return;
+  await fbDb.collection('users').doc(fbAuth.currentUser.uid).set(
+    { photos: firebase.firestore.FieldValue.arrayUnion(meta) },
+    { merge: true }
+  );
+}
+
+// オフライン中に撮った写真をStorageへアップロード
+async function syncLocalPhotos() {
+  if (!fbStorage || !fbAuth || !fbAuth.currentUser) return;
+  const [localPhotos, cloudMetas] = await Promise.all([dbAll(), getCloudPhotos()]);
+  const cloudIds = new Set(cloudMetas.map(m => m.id));
+  const unsynced = localPhotos.filter(p => !cloudIds.has(p.id) && p.dataUrl);
+  for (const p of unsynced) {
+    try {
+      const ref = fbStorage.ref(`photos/${fbAuth.currentUser.uid}/${p.id}.jpg`);
+      await ref.putString(p.dataUrl, 'data_url');
+      const storageUrl = await ref.getDownloadURL();
+      await savePhotoMeta({ id: p.id, date: p.date, storageUrl, createdAt: p.createdAt || Date.now() });
+    } catch (e) { console.error('Photo sync error:', e); }
+  }
+}
+
 async function onPhotoSelected(input) {
   const file = input.files[0];
   if (!file) return;
-  const date   = document.getElementById('photo-date').value || today();
+  const date    = document.getElementById('photo-date').value || today();
   const dataUrl = await compressImage(file, 1200, 0.82);
-  await dbAdd({ id: uid(), date, dataUrl, createdAt: Date.now() });
+  const id      = uid();
+  const record  = { id, date, dataUrl, createdAt: Date.now() };
+
+  await dbAdd(record); // まずローカルに保存
+
+  if (fbStorage && fbAuth && fbAuth.currentUser) {
+    setSyncState('syncing');
+    try {
+      const ref = fbStorage.ref(`photos/${fbAuth.currentUser.uid}/${id}.jpg`);
+      await ref.putString(dataUrl, 'data_url');
+      const storageUrl = await ref.getDownloadURL();
+      await savePhotoMeta({ id, date, storageUrl, createdAt: record.createdAt });
+      setSyncState('ok');
+      setTimeout(() => setSyncState(''), 3000);
+    } catch (e) { setSyncState('err'); console.error('Photo upload error:', e); }
+  }
+
   input.value = '';
   toast('📷 写真を保存しました');
   renderPhotoGrid();
@@ -1742,10 +1790,22 @@ async function onPhotoSelected(input) {
 async function renderPhotoGrid() {
   const el = document.getElementById('photo-grid');
   if (!el) return;
-  const photos = await dbAll();
-  if (!photos.length) { el.innerHTML = emptyHTML('📷','NO PHOTOS YET'); return; }
+  const [localPhotos, cloudMetas] = await Promise.all([dbAll(), getCloudPhotos()]);
 
-  photos.sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+  // ローカルとクラウドをIDでマージ（storageUrl優先）
+  const map = {};
+  localPhotos.forEach(p => { map[p.id] = { ...p, src: p.dataUrl, storageUrl: null }; });
+  cloudMetas.forEach(m  => {
+    if (map[m.id]) { map[m.id].storageUrl = m.storageUrl; map[m.id].src = m.storageUrl; }
+    else           { map[m.id] = { ...m, src: m.storageUrl }; }
+  });
+
+  const photos = Object.values(map);
+  photoCache = {};
+  photos.forEach(p => { photoCache[p.id] = { src: p.src, date: p.date, storageUrl: p.storageUrl }; });
+
+  if (!photos.length) { el.innerHTML = emptyHTML('📷','NO PHOTOS YET'); return; }
+  photos.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt||0) - (a.createdAt||0));
   const grouped = {};
   photos.forEach(p => { (grouped[p.date] = grouped[p.date] || []).push(p); });
   const dates = [...new Set(photos.map(p => p.date))];
@@ -1756,7 +1816,7 @@ async function renderPhotoGrid() {
       <div class="photo-grid-row">
         ${grouped[date].map(p => `
           <div class="photo-thumb" onclick="openPhotoModal('${p.id}')">
-            <img src="${p.dataUrl}" alt="${esc(date)}" loading="lazy">
+            <img src="${esc(p.src)}" alt="${esc(date)}" loading="lazy">
             <button class="photo-del-btn" onclick="event.stopPropagation();confirmDelPhoto('${p.id}')">✕</button>
           </div>
         `).join('')}
@@ -1765,11 +1825,10 @@ async function renderPhotoGrid() {
   `).join('');
 }
 
-async function openPhotoModal(id) {
-  const photos = await dbAll();
-  const p = photos.find(x => x.id === id);
+function openPhotoModal(id) {
+  const p = photoCache[id];
   if (!p) return;
-  document.getElementById('photo-modal-img').src  = p.dataUrl;
+  document.getElementById('photo-modal-img').src = p.src;
   document.getElementById('photo-modal-date').textContent = fmtDateFull(p.date);
   document.getElementById('photo-modal').classList.add('open');
 }
@@ -1781,7 +1840,18 @@ function closePhotoModal(e) {
 
 async function confirmDelPhoto(id) {
   if (!confirm('この写真を削除しますか？')) return;
+  const cached = photoCache[id];
   await dbDel(id);
+  if (fbStorage && fbAuth && fbAuth.currentUser && cached && cached.storageUrl) {
+    try {
+      await fbStorage.refFromURL(cached.storageUrl).delete();
+      const ref = fbDb.collection('users').doc(fbAuth.currentUser.uid);
+      const doc = await ref.get();
+      if (doc.exists) {
+        await ref.update({ photos: (doc.data().photos || []).filter(p => p.id !== id) });
+      }
+    } catch (e) { console.error('Photo delete error:', e); }
+  }
   toast('🗑️ 削除しました');
   renderPhotoGrid();
 }
@@ -1870,13 +1940,14 @@ const FIREBASE_CONFIG = {
 /* ─────────────────────────────────────────
    FIREBASE INIT
 ───────────────────────────────────────── */
-let fbAuth = null, fbDb = null, syncTimer = null;
+let fbAuth = null, fbDb = null, fbStorage = null, syncTimer = null;
 
 function initFirebase() {
   if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return; // 未設定ならスキップ
   firebase.initializeApp(FIREBASE_CONFIG);
   fbAuth = firebase.auth();
-  fbDb   = firebase.firestore();
+  fbDb      = firebase.firestore();
+  fbStorage = firebase.storage();
   // オフライン永続化（圏外でも記録でき、復帰時に自動同期）
   fbDb.enablePersistence({ synchronizeTabs: true }).catch(() => {});
   // 認証状態の変化を監視
@@ -1958,7 +2029,7 @@ async function pushToFirestore() {
       body:      load(K.b),
       favs:      load(K.favs),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    }, { merge: true });
     setSyncState('ok');
     setTimeout(() => setSyncState(''), 3000);
   } catch (e) {
@@ -1989,6 +2060,9 @@ async function pullFromFirestore(uid) {
     localStorage.setItem(K.favs, JSON.stringify(mf));
     // UI再描画
     renderFavChips(); renderWRecent(); renderCRecent(); renderBRecent();
+    // オフライン中に撮った写真をStorageへ同期
+    await syncLocalPhotos();
+    renderPhotoGrid();
     setSyncState('ok');
     toast('☁️ データを同期しました');
     setTimeout(() => setSyncState(''), 3000);
