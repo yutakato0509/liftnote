@@ -499,6 +499,51 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .fat-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
 .fat-val { font-size: 14px; font-weight: 800; color: var(--accent2); }
 
+/* ═══════════ PHOTO ═══════════ */
+.photo-upload-card { margin-bottom: 12px; }
+.photo-grid-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.photo-thumb {
+  position: relative; aspect-ratio: 1;
+  border-radius: 10px; overflow: hidden;
+  cursor: pointer; background: var(--card2);
+}
+.photo-thumb img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform .2s;
+}
+.photo-thumb:active img { transform: scale(.96); }
+.photo-del-btn {
+  position: absolute; top: 5px; right: 5px;
+  width: 24px; height: 24px;
+  background: rgba(0,0,0,.75); border: none; border-radius: 50%;
+  color: #fff; font-size: 11px; font-weight: 900;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  -webkit-appearance: none; line-height: 1;
+}
+#photo-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.96); z-index: 600;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px;
+}
+#photo-modal.open { display: flex; }
+#photo-modal-img {
+  max-width: 100%; max-height: calc(100vh - 100px);
+  object-fit: contain; border-radius: 10px;
+}
+.photo-modal-date {
+  color: var(--sub); font-size: 12px; font-weight: 700;
+  margin-top: 14px; letter-spacing: .06em;
+}
+.photo-modal-close {
+  position: absolute; top: env(safe-area-inset-top, 16px); right: 16px;
+  background: rgba(255,255,255,.1); border: none;
+  color: #fff; font-size: 18px; width: 36px; height: 36px;
+  border-radius: 50%; cursor: pointer; -webkit-appearance: none;
+  display: flex; align-items: center; justify-content: center;
+}
+
 /* ═══════════ AUTH / SYNC ═══════════ */
 .header-right {
   display: flex; align-items: center; gap: 10px;
@@ -826,6 +871,33 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 </div>
 
 <!-- ═══════════════════════════════════════
+     VIEW: フォト
+════════════════════════════════════════ -->
+<div id="view-photo" class="view">
+  <div class="card photo-upload-card">
+    <div class="card-label">Body Photo</div>
+    <div class="glow-line" style="background: linear-gradient(90deg, transparent, rgba(255,45,85,.25) 50%, transparent);"></div>
+    <div class="field">
+      <label>撮影日</label>
+      <input type="date" id="photo-date">
+    </div>
+    <button class="btn btn-primary" onclick="document.getElementById('photo-input').click()">
+      📷 写真を追加
+    </button>
+    <input type="file" id="photo-input" accept="image/*" style="display:none"
+           onchange="onPhotoSelected(this)">
+  </div>
+  <div id="photo-grid"></div>
+</div>
+
+<!-- PHOTO MODAL -->
+<div id="photo-modal" onclick="closePhotoModal(event)">
+  <button class="photo-modal-close" onclick="document.getElementById('photo-modal').classList.remove('open')">✕</button>
+  <img id="photo-modal-img" src="" alt="">
+  <div class="photo-modal-date" id="photo-modal-date"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
      BOTTOM NAV
 ════════════════════════════════════════ -->
 <nav class="bottom-nav">
@@ -843,6 +915,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   </div>
   <div class="nav-item" onclick="nav('graph',this)">
     <span class="nav-icon">📈</span>グラフ
+  </div>
+  <div class="nav-item" onclick="nav('photo',this)">
+    <span class="nav-icon">📷</span>フォト
   </div>
 </nav>
 
@@ -920,11 +995,13 @@ window.addEventListener('DOMContentLoaded', () => {
   const t = today();
   ['w-date','c-date','b-date'].forEach(id => document.getElementById(id).value = t);
 
+  document.getElementById('photo-date').value = today();
   renderFavChips();
   renderWRecent();
   renderCRecent();
   renderBRecent();
   renderStreaks();
+  openPhotoDB();
   initFirebase();
 });
 
@@ -942,7 +1019,7 @@ let sortOrder = { w: 'default', c: 'default', b: 'default', hist: 'desc' };
 
 // 指定ビューに切り替える（ナビアイコンのactive状態も同期）
 function goToView(view) {
-  const VIEWS = ['weight','cardio','body','history','graph'];
+  const VIEWS = ['weight','cardio','body','history','graph','photo'];
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach((n, i) => n.classList.toggle('active', VIEWS[i] === view));
   document.getElementById('view-' + view).classList.add('active');
@@ -952,6 +1029,7 @@ function nav(view, el) {
   goToView(view);
   if (view === 'history') renderHistory();
   if (view === 'graph')   { fillExSel(); setTimeout(drawBwChart, 80); }
+  if (view === 'photo')   renderPhotoGrid();
 }
 
 // ─── ソート適用 ───────────────────────────
@@ -1585,6 +1663,127 @@ function emptyHTML(icon, msg) {
 function esc(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─────────────────────────────────────────
+   PHOTO (IndexedDB)
+───────────────────────────────────────── */
+let photoDB = null;
+
+function openPhotoDB() {
+  return new Promise((resolve, reject) => {
+    if (photoDB) { resolve(photoDB); return; }
+    const req = indexedDB.open('ft_photo_db', 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('photos')) {
+        db.createObjectStore('photos', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = e => { photoDB = e.target.result; resolve(photoDB); };
+    req.onerror   = e => reject(e);
+  });
+}
+
+function dbAll() {
+  return openPhotoDB().then(db => new Promise((resolve, reject) => {
+    const req = db.transaction('photos','readonly').objectStore('photos').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = e => reject(e);
+  }));
+}
+
+function dbAdd(record) {
+  return openPhotoDB().then(db => new Promise((resolve, reject) => {
+    const req = db.transaction('photos','readwrite').objectStore('photos').add(record);
+    req.onsuccess = () => resolve();
+    req.onerror   = e => reject(e);
+  }));
+}
+
+function dbDel(id) {
+  return openPhotoDB().then(db => new Promise((resolve, reject) => {
+    const req = db.transaction('photos','readwrite').objectStore('photos').delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror   = e => reject(e);
+  }));
+}
+
+function compressImage(file, maxW, quality) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onPhotoSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const date   = document.getElementById('photo-date').value || today();
+  const dataUrl = await compressImage(file, 1200, 0.82);
+  await dbAdd({ id: uid(), date, dataUrl, createdAt: Date.now() });
+  input.value = '';
+  toast('📷 写真を保存しました');
+  renderPhotoGrid();
+}
+
+async function renderPhotoGrid() {
+  const el = document.getElementById('photo-grid');
+  if (!el) return;
+  const photos = await dbAll();
+  if (!photos.length) { el.innerHTML = emptyHTML('📷','NO PHOTOS YET'); return; }
+
+  photos.sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+  const grouped = {};
+  photos.forEach(p => { (grouped[p.date] = grouped[p.date] || []).push(p); });
+  const dates = [...new Set(photos.map(p => p.date))];
+
+  el.innerHTML = dates.map(date => `
+    <div style="margin-bottom:20px;">
+      <div class="hist-sep">📅 ${fmtDateFull(date)}</div>
+      <div class="photo-grid-row">
+        ${grouped[date].map(p => `
+          <div class="photo-thumb" onclick="openPhotoModal('${p.id}')">
+            <img src="${p.dataUrl}" alt="${esc(date)}" loading="lazy">
+            <button class="photo-del-btn" onclick="event.stopPropagation();confirmDelPhoto('${p.id}')">✕</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function openPhotoModal(id) {
+  const photos = await dbAll();
+  const p = photos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('photo-modal-img').src  = p.dataUrl;
+  document.getElementById('photo-modal-date').textContent = fmtDateFull(p.date);
+  document.getElementById('photo-modal').classList.add('open');
+}
+
+function closePhotoModal(e) {
+  if (e && e.target !== document.getElementById('photo-modal')) return;
+  document.getElementById('photo-modal').classList.remove('open');
+}
+
+async function confirmDelPhoto(id) {
+  if (!confirm('この写真を削除しますか？')) return;
+  await dbDel(id);
+  toast('🗑️ 削除しました');
+  renderPhotoGrid();
 }
 
 /* ─────────────────────────────────────────
