@@ -1611,12 +1611,12 @@ function calcStreak(records) {
 function streakMsg(n, type) {
   const label = type === 'w' ? 'ウエイト' : '有酸素';
   if (n === 0)  return `今日 ${label} を記録して始めよう！`;
-  if (n === 1)  return 'スタート！継続が力だ 💪';
-  if (n < 4)    return `${n}日連続！いい調子！`;
-  if (n < 7)    return `${n}日連続！習慣になってきた 🔥`;
-  if (n < 14)   return `${n}日連続！本物の習慣 🔥🔥`;
-  if (n < 30)   return `${n}日連続！マジで尊敬 🔥🔥🔥`;
-  return `${n}日連続！！もはや伝説 🏆`;
+  if (n < 3)    return 'スタート！継続が力だ 💪';
+  if (n < 7)    return `${n}日連続！いい調子、このまま続けよう！`;
+  if (n < 14)   return `${n}日連続！習慣になってきた 🔥`;
+  if (n < 21)   return `${n}日連続！本物の習慣が身についてる 🔥🔥`;
+  if (n < 30)   return `${n}日連続！もうお前の一部だ 💪🔥`;
+  return `${n}日連続！！伝説のアスリート 🏆`;
 }
 
 function renderStreaks() {
