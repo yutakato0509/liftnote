@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>筋トレ記録</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ff5500">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="筋トレ記録">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  }
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
@@ -266,9 +276,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   background: #000; border-top: 1px solid #1a1a1a;
   display: flex; z-index: 200;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
+.bottom-nav::-webkit-scrollbar { display: none; }
 .nav-item {
-  flex: 1; display: flex; flex-direction: column;
+  min-width: 62px; flex-shrink: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 3px;
   cursor: pointer; color: #383838;
   font-size: 9px; font-weight: 700; letter-spacing: .05em;
@@ -575,6 +588,79 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 }
 .period-btn.active { background: rgba(255,85,0,.12); border-color: var(--accent); color: var(--accent); }
 
+/* ═══════════ DASHBOARD ═══════════ */
+.home-greeting { font-size: 22px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
+.home-sub { font-size: 12px; color: var(--sub); font-weight: 700; letter-spacing: .04em; margin-bottom: 4px; }
+.home-streak-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.home-streak-mini {
+  border-radius: 14px; padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(255,85,0,.1), rgba(255,45,85,.06));
+  border: 1px solid rgba(255,85,0,.2);
+}
+.home-streak-mini.green {
+  background: linear-gradient(135deg, rgba(0,212,106,.1), rgba(0,179,89,.06));
+  border-color: rgba(0,212,106,.2);
+}
+.home-streak-mini-num {
+  font-size: 32px; font-weight: 900; line-height: 1;
+  background: linear-gradient(135deg, #ff5500, #ff2d55);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  font-variant-numeric: tabular-nums;
+}
+.home-streak-mini.green .home-streak-mini-num {
+  background: linear-gradient(135deg, #00d46a, #00b359);
+  -webkit-background-clip: text; background-clip: text;
+}
+.home-streak-mini-label { font-size: 10px; font-weight: 800; color: var(--sub); text-transform: uppercase; letter-spacing: .06em; margin-top: 3px; }
+.home-streak-mini-msg { font-size: 11px; font-weight: 700; color: var(--text); margin-top: 3px; }
+.home-week-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.home-week-item {
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 8px; text-align: center;
+}
+.home-week-num { font-size: 22px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.home-week-label { font-size: 9px; font-weight: 800; color: var(--sub); text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
+.pr-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.pr-row:last-child { border-bottom: none; }
+.pr-exercise { font-size: 14px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+.pr-val { font-size: 13px; font-weight: 800; color: var(--accent); white-space: nowrap; }
+.pr-date { font-size: 10px; color: var(--sub); font-weight: 600; }
+
+/* ═══════════ PR BADGE ═══════════ */
+.pr-badge {
+  display: inline-block; font-size: 9px; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, var(--amber), var(--accent));
+  border-radius: 5px; padding: 2px 6px; margin-left: 5px;
+  letter-spacing: .04em; vertical-align: middle;
+}
+
+/* ═══════════ SET ROWS ═══════════ */
+.set-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.set-row-num {
+  font-size: 10px; font-weight: 800; color: var(--sub);
+  text-transform: uppercase; letter-spacing: .06em; min-width: 32px; flex-shrink: 0;
+}
+.set-row-inputs { display: flex; gap: 8px; flex: 1; }
+.set-row-inputs .stat-field { flex: 1; }
+.set-del-btn {
+  flex-shrink: 0; width: 32px; height: 32px;
+  background: rgba(255,59,48,.07); border: 1px solid rgba(255,59,48,.2);
+  color: var(--red); border-radius: 8px; font-size: 15px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  -webkit-appearance: none;
+}
+.btn-add-set {
+  width: 100%; padding: 11px; margin-bottom: 12px;
+  background: rgba(255,255,255,.03); border: 1px dashed #2e2e2e;
+  border-radius: 12px; color: var(--sub);
+  font-size: 12px; font-weight: 800; cursor: pointer; font-family: inherit;
+  -webkit-appearance: none; transition: background .15s; letter-spacing: .04em;
+}
+.btn-add-set:active { background: rgba(255,255,255,.07); }
+
 /* ═══════════ AUTH / SYNC ═══════════ */
 .header-right {
   display: flex; align-items: center; gap: 10px;
@@ -660,7 +746,44 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 <!-- ═══════════════════════════════════════
      VIEW: ウエイトトレーニング
 ════════════════════════════════════════ -->
-<div id="view-weight" class="view active">
+<!-- ═══════════════════════════════════════
+     VIEW: ホーム（ダッシュボード）
+════════════════════════════════════════ -->
+<div id="view-home" class="view active">
+  <div class="card">
+    <div class="home-greeting" id="home-greeting"></div>
+    <div class="home-sub" id="home-sub"></div>
+  </div>
+
+  <!-- ストリーク -->
+  <div class="home-streak-row">
+    <div class="home-streak-mini" id="home-w-streak"></div>
+    <div class="home-streak-mini green" id="home-c-streak"></div>
+  </div>
+
+  <!-- 最新体重 -->
+  <div class="card" id="home-bw-card" style="display:none;">
+    <div class="card-label" style="color:var(--amber);">Current Weight</div>
+    <div class="glow-line" style="background:linear-gradient(90deg,transparent,rgba(255,149,0,.2) 50%,transparent);"></div>
+    <div id="home-bw"></div>
+  </div>
+
+  <!-- 今週のサマリー -->
+  <div class="card">
+    <div class="card-label">This Week</div>
+    <div class="glow-line"></div>
+    <div class="home-week-grid" id="home-week"></div>
+  </div>
+
+  <!-- PR一覧 -->
+  <div class="card" id="home-pr-card">
+    <div class="card-label">🏆 Personal Records</div>
+    <div class="glow-line"></div>
+    <div id="home-pr"></div>
+  </div>
+</div>
+
+<div id="view-weight" class="view">
   <div id="w-streak" class="streak-card streak-zero" style="display:none;"></div>
   <div class="card">
     <div class="card-label">Weight Training</div>
@@ -695,23 +818,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       <div class="autofill-hint" id="autofill-hint">⚡ 前回の記録を自動入力しました</div>
     </div>
 
-    <div class="row3">
-      <div class="stat-field">
-        <label>重量</label>
-        <input type="number" id="w-weight" placeholder="60" min="0" step="0.5">
-        <div class="stat-unit">kg</div>
-      </div>
-      <div class="stat-field">
-        <label>回数</label>
-        <input type="number" id="w-reps" placeholder="10" min="1">
-        <div class="stat-unit">reps</div>
-      </div>
-      <div class="stat-field">
-        <label>セット</label>
-        <input type="number" id="w-sets" placeholder="3" min="1">
-        <div class="stat-unit">sets</div>
-      </div>
-    </div>
+    <div id="w-sets-container"></div>
+    <button class="btn-add-set" onclick="addSetRow()">＋ セットを追加</button>
 
     <div class="field" style="margin-top:4px;">
       <label>日付</label>
@@ -942,7 +1050,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
      BOTTOM NAV
 ════════════════════════════════════════ -->
 <nav class="bottom-nav">
-  <div class="nav-item active" onclick="nav('weight',this)">
+  <div class="nav-item active" onclick="nav('home',this)">
+    <span class="nav-icon">🏠</span>ホーム
+  </div>
+  <div class="nav-item" onclick="nav('weight',this)">
     <span class="nav-icon">💪</span>ウエイト
   </div>
   <div class="nav-item" onclick="nav('cardio',this)">
@@ -1046,6 +1157,8 @@ window.addEventListener('DOMContentLoaded', () => {
   ['w-date','c-date','b-date'].forEach(id => document.getElementById(id).value = t);
 
   document.getElementById('photo-date').value = today();
+  addSetRow(); // 初期セット行を追加
+  renderHome();
   renderFavChips();
   renderWRecent();
   renderCRecent();
@@ -1072,7 +1185,7 @@ let sortOrder = { w: 'default', c: 'default', b: 'default', hist: 'desc' };
 
 // 指定ビューに切り替える（ナビアイコンのactive状態も同期）
 function goToView(view) {
-  const VIEWS = ['weight','cardio','body','history','graph','photo'];
+  const VIEWS = ['home','weight','cardio','body','history','graph','photo'];
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach((n, i) => n.classList.toggle('active', VIEWS[i] === view));
   document.getElementById('view-' + view).classList.add('active');
@@ -1080,6 +1193,7 @@ function goToView(view) {
 
 function nav(view, el) {
   goToView(view);
+  if (view === 'home')    renderHome();
   if (view === 'history') renderHistory();
   if (view === 'graph')   { fillExSel(); setTimeout(drawBwChart, 80); }
   if (view === 'photo')   renderPhotoGrid();
@@ -1118,9 +1232,6 @@ function setSortHist(order, el) {
 function resetWForm() {
   editingId.w = null;
   document.getElementById('w-exercise').value = '';
-  document.getElementById('w-weight').value   = '';
-  document.getElementById('w-reps').value     = '';
-  document.getElementById('w-sets').value     = '';
   document.getElementById('w-date').value     = today();
   document.getElementById('w-memo').value     = '';
   document.getElementById('autofill-hint').style.display = 'none';
@@ -1128,6 +1239,9 @@ function resetWForm() {
   document.getElementById('w-edit-banner').style.display = 'none';
   document.getElementById('w-save-btn').textContent = 'REC ＋ 記録する';
   document.getElementById('w-cancel-btn').style.display = 'none';
+  document.getElementById('w-sets-container').innerHTML = '';
+  setRowCount = 0;
+  addSetRow();
 }
 function resetCForm() {
   editingId.c = null;
@@ -1157,11 +1271,18 @@ function editRecord(type, id) {
   if (type === 'w') {
     goToView('weight');
     document.getElementById('w-exercise').value = data.exercise || '';
-    document.getElementById('w-weight').value   = data.weight   || '';
-    document.getElementById('w-reps').value     = data.reps     || '';
-    document.getElementById('w-sets').value     = data.sets     || '';
     document.getElementById('w-date').value     = data.date     || today();
     document.getElementById('w-memo').value     = data.memo     || '';
+    // セット行を復元
+    document.getElementById('w-sets-container').innerHTML = '';
+    setRowCount = 0;
+    if (data.setData && data.setData.length) {
+      data.setData.forEach(s => addSetRow(s.weight || '', s.reps || ''));
+    } else {
+      // 旧形式の互換対応
+      const n = data.sets || 1;
+      for (let i = 0; i < n; i++) addSetRow(i === 0 ? (data.weight || '') : '', data.reps || '');
+    }
     updateHeartBtn(data.exercise || '');
     document.getElementById('w-edit-banner').textContent = `✏️ 編集中: ${data.exercise}`;
     document.getElementById('w-edit-banner').style.display = 'block';
@@ -1245,16 +1366,7 @@ function renderFavChips() {
 function selectFav(exercise) {
   document.getElementById('w-exercise').value = exercise;
   updateHeartBtn(exercise);
-  // 前回記録の自動入力も実行
-  const records = load(K.w).filter(r => r.exercise === exercise);
-  if (records.length) {
-    records.sort((a,b) => b.date.localeCompare(a.date));
-    const last = records[0];
-    if (last.weight) document.getElementById('w-weight').value = last.weight;
-    if (last.reps)   document.getElementById('w-reps').value   = last.reps;
-    if (last.sets)   document.getElementById('w-sets').value   = last.sets;
-    document.getElementById('autofill-hint').style.display = 'block';
-  }
+  autofillSets(exercise);
 }
 
 /* ─────────────────────────────────────────
@@ -1263,13 +1375,21 @@ function selectFav(exercise) {
 function onExerciseInput(val) {
   updateHeartBtn(val);
   if (!val.trim()) { document.getElementById('autofill-hint').style.display='none'; return; }
-  const records = load(K.w).filter(r => r.exercise === val.trim());
+  autofillSets(val.trim());
+}
+function autofillSets(exercise) {
+  const records = load(K.w).filter(r => r.exercise === exercise);
   if (!records.length) { document.getElementById('autofill-hint').style.display='none'; return; }
   records.sort((a,b) => b.date.localeCompare(a.date));
   const last = records[0];
-  if (last.weight) document.getElementById('w-weight').value = last.weight;
-  if (last.reps)   document.getElementById('w-reps').value   = last.reps;
-  if (last.sets)   document.getElementById('w-sets').value   = last.sets;
+  document.getElementById('w-sets-container').innerHTML = '';
+  setRowCount = 0;
+  if (last.setData && last.setData.length) {
+    last.setData.forEach(s => addSetRow(s.weight || '', s.reps || ''));
+  } else {
+    const n = last.sets || 1;
+    for (let i = 0; i < n; i++) addSetRow(i === 0 ? (last.weight || '') : '', last.reps || '');
+  }
   document.getElementById('autofill-hint').style.display = 'block';
 }
 
@@ -1278,24 +1398,21 @@ function onExerciseInput(val) {
 ───────────────────────────────────────── */
 function saveWeight() {
   const exercise = document.getElementById('w-exercise').value.trim();
-  const weight   = parseFloat(document.getElementById('w-weight').value);
-  const reps     = parseInt(document.getElementById('w-reps').value);
-  const sets     = parseInt(document.getElementById('w-sets').value);
   const date     = document.getElementById('w-date').value;
   const memo     = document.getElementById('w-memo').value.trim();
+  const setData  = getSetData();
 
-  if (!exercise)         { alert('種目名を入力してください'); return; }
-  if (!date)             { alert('日付を入力してください'); return; }
-  if (!reps || reps < 1) { alert('回数を入力してください'); return; }
-  if (!sets || sets < 1) { alert('セット数を入力してください'); return; }
+  if (!exercise)       { alert('種目名を入力してください'); return; }
+  if (!date)           { alert('日付を入力してください'); return; }
+  if (!setData.length) { alert('少なくとも1セット入力してください'); return; }
 
   const arr = load(K.w);
   if (editingId.w) {
     const idx = arr.findIndex(r => r.id === editingId.w);
-    if (idx !== -1) arr[idx] = { ...arr[idx], exercise, weight: isNaN(weight) ? 0 : weight, reps, sets, date, memo };
+    if (idx !== -1) arr[idx] = { ...arr[idx], exercise, date, memo, setData };
     toast('✅ 更新しました！');
   } else {
-    arr.push({ id: uid(), date, exercise, weight: isNaN(weight) ? 0 : weight, reps, sets, memo });
+    arr.push({ id: uid(), date, exercise, memo, setData });
     toast('🔥 記録しました！');
   }
   save(K.w, arr);
@@ -1303,6 +1420,7 @@ function saveWeight() {
   resetWForm();
   renderWRecent();
   renderStreaks();
+  renderHome();
 }
 
 function renderWRecent() {
@@ -1311,25 +1429,42 @@ function renderWRecent() {
   const el   = document.getElementById('w-recent');
   if (!all.length) { el.innerHTML = emptyHTML('🏋️','NO RECORDS YET'); return; }
 
+  // PR計算: 種目ごとの最高重量
+  const prMap = {};
+  all.forEach(r => {
+    const maxW = r.setData ? Math.max(...r.setData.map(s => s.weight || 0)) : (r.weight || 0);
+    if (!prMap[r.exercise] || maxW > prMap[r.exercise]) prMap[r.exercise] = maxW;
+  });
+
   el.innerHTML = recs.map(r => {
-    const wt   = r.weight > 0;
-    const nums = wt
-      ? `<span class="rec-num">${r.weight}</span><span class="rec-unit">kg</span>
-         <span class="rec-sep">×</span>
-         <span class="rec-num" style="color:var(--text);font-size:20px;">${r.reps}</span><span class="rec-unit">回</span>
-         <span class="rec-sep">×</span>
-         <span class="rec-num" style="color:var(--text);font-size:20px;">${r.sets}</span><span class="rec-unit">set</span>`
-      : `<span class="rec-unit">自重</span>
-         <span class="rec-sep">×</span>
-         <span class="rec-num" style="font-size:20px;">${r.reps}</span><span class="rec-unit">回</span>
-         <span class="rec-sep">×</span>
-         <span class="rec-num" style="font-size:20px;">${r.sets}</span><span class="rec-unit">set</span>`;
-    const vol = r.weight > 0 ? r.weight * r.reps * r.sets : null;
+    const sd = r.setData;
+    let numsHTML, vol;
+    if (sd && sd.length) {
+      const maxW = Math.max(...sd.map(s => s.weight || 0));
+      vol = sd.reduce((a, s) => a + (s.weight || 0) * (s.reps || 0), 0);
+      const isPR = maxW > 0 && maxW >= prMap[r.exercise];
+      numsHTML = `
+        <div style="font-size:12px;color:var(--sub);margin-top:4px;line-height:1.7;">
+          ${sd.map((s,i) => `<span style="margin-right:8px;">${i+1}. ${s.weight > 0 ? s.weight+'kg' : '自重'} × ${s.reps}回</span>`).join('')}
+        </div>
+        ${isPR ? '<span class="pr-badge">🏆 PR</span>' : ''}`;
+    } else {
+      const wt = r.weight > 0;
+      vol = wt ? r.weight * r.reps * r.sets : null;
+      const isPR = wt && r.weight >= prMap[r.exercise];
+      numsHTML = `
+        <div class="rec-card-nums">
+          ${wt ? `<span class="rec-num">${r.weight}</span><span class="rec-unit">kg</span><span class="rec-sep">×</span>` : '<span class="rec-unit">自重</span><span class="rec-sep">×</span>'}
+          <span class="rec-num" style="font-size:20px;">${r.reps}</span><span class="rec-unit">回</span>
+          <span class="rec-sep">×</span><span class="rec-num" style="font-size:20px;">${r.sets}</span><span class="rec-unit">set</span>
+          ${isPR ? '<span class="pr-badge">🏆 PR</span>' : ''}
+        </div>`;
+    }
     return `
       <div class="rec-card">
         <div class="rec-card-body">
           <div class="rec-card-name">${esc(r.exercise)}</div>
-          <div class="rec-card-nums">${nums}</div>
+          ${numsHTML}
           ${vol ? `<div><span class="vol-badge">VOL ${vol.toLocaleString()}kg</span></div>` : ''}
           ${r.memo ? `<div class="rec-memo">📝 ${esc(r.memo)}</div>` : ''}
         </div>
@@ -1991,6 +2126,170 @@ async function confirmDelPhoto(id) {
   }
   toast('🗑️ 削除しました');
   renderPhotoGrid();
+}
+
+/* ─────────────────────────────────────────
+   SET ROWS
+───────────────────────────────────────── */
+let setRowCount = 0;
+
+function addSetRow(weight = '', reps = '') {
+  setRowCount++;
+  const n = setRowCount;
+  const container = document.getElementById('w-sets-container');
+  const setNum = container.children.length + 1;
+  const div = document.createElement('div');
+  div.className = 'set-row'; div.id = `set-row-${n}`;
+  div.innerHTML = `
+    <span class="set-row-num">Set ${setNum}</span>
+    <div class="set-row-inputs">
+      <div class="stat-field">
+        <label>重量</label>
+        <input type="number" class="set-weight" value="${weight}" placeholder="60" min="0" step="0.5"
+               style="font-size:22px;color:var(--accent);">
+        <div class="stat-unit">kg</div>
+      </div>
+      <div class="stat-field">
+        <label>回数</label>
+        <input type="number" class="set-reps" value="${reps}" placeholder="10" min="1"
+               style="font-size:22px;color:var(--text);">
+        <div class="stat-unit">reps</div>
+      </div>
+    </div>
+    <button class="set-del-btn" onclick="removeSetRow('set-row-${n}')">✕</button>`;
+  container.appendChild(div);
+  updateSetLabels();
+}
+function removeSetRow(id) {
+  const container = document.getElementById('w-sets-container');
+  if (container.children.length <= 1) return;
+  document.getElementById(id).remove();
+  updateSetLabels();
+}
+function updateSetLabels() {
+  document.querySelectorAll('#w-sets-container .set-row-num').forEach((el, i) => {
+    el.textContent = `Set ${i + 1}`;
+  });
+}
+function getSetData() {
+  return Array.from(document.querySelectorAll('#w-sets-container .set-row')).map(row => ({
+    weight: parseFloat(row.querySelector('.set-weight').value) || 0,
+    reps:   parseInt(row.querySelector('.set-reps').value)    || 0,
+  })).filter(s => s.reps > 0);
+}
+
+/* ─────────────────────────────────────────
+   PR
+───────────────────────────────────────── */
+function getTopPRs(limit) {
+  const exercises = [...new Set(load(K.w).map(r => r.exercise))];
+  return exercises.map(ex => {
+    const recs = load(K.w).filter(r => r.exercise === ex);
+    let best = null;
+    recs.forEach(r => {
+      const sets = r.setData || [{ weight: r.weight || 0, reps: r.reps || 0 }];
+      sets.forEach(s => {
+        if (s.weight > 0 && (!best || s.weight > best.weight || (s.weight === best.weight && s.reps > best.reps))) {
+          best = { weight: s.weight, reps: s.reps, date: r.date };
+        }
+      });
+    });
+    return best ? { exercise: ex, ...best } : null;
+  }).filter(Boolean)
+    .sort((a,b) => b.weight - a.weight)
+    .slice(0, limit);
+}
+
+/* ─────────────────────────────────────────
+   DASHBOARD
+───────────────────────────────────────── */
+function daysAgo(n) {
+  const [y,m,d] = today().split('-').map(Number);
+  return new Date(Date.UTC(y,m-1,d-n,12)).toISOString().slice(0,10);
+}
+
+function getWeekStats() {
+  const dow = parseDate(today()).dow; // 0=日
+  const monday = daysAgo(dow === 0 ? 6 : dow - 1);
+  const wRecs = load(K.w).filter(r => r.date >= monday);
+  const cRecs = load(K.c).filter(r => r.date >= monday);
+  const wDays = new Set(wRecs.map(r => r.date)).size;
+  const cDays = new Set(cRecs.map(r => r.date)).size;
+  const totalVol = wRecs.reduce((a, r) => {
+    if (r.setData) return a + r.setData.reduce((b,s) => b + (s.weight||0)*(s.reps||0), 0);
+    return a + (r.weight||0)*(r.reps||0)*(r.sets||0);
+  }, 0);
+  return { wDays, cDays, totalVol };
+}
+
+function renderHome() {
+  const h = jstNow().getUTCHours();
+  const greeting = h < 6  ? 'おやすみ 🌙'
+                 : h < 11 ? 'おはようございます ☀️'
+                 : h < 17 ? 'こんにちは 💪'
+                 : 'お疲れ様です 🌆';
+  document.getElementById('home-greeting').textContent = greeting;
+  document.getElementById('home-sub').textContent = `今日も記録していこう！`;
+
+  // ストリーク
+  ['w','c'].forEach(type => {
+    const el  = document.getElementById(`home-${type}-streak`);
+    const n   = calcStreak(load(type === 'w' ? K.w : K.c));
+    const lbl = type === 'w' ? '💪 ウエイト' : '🏃 有酸素';
+    el.innerHTML = `
+      <div class="home-streak-mini-num">${n}</div>
+      <div class="home-streak-mini-label">${lbl} streak</div>
+      <div class="home-streak-mini-msg">${streakMsg(n, type)}</div>`;
+  });
+
+  // 最新体重
+  const bRecs = load(K.b).sort((a,b) => b.date.localeCompare(a.date));
+  const bwCard = document.getElementById('home-bw-card');
+  if (bRecs.length) {
+    bwCard.style.display = 'block';
+    const cur = bRecs[0];
+    document.getElementById('home-bw').innerHTML = `
+      <div class="bw-hero" style="margin-bottom:4px;">
+        <span class="bw-big" style="font-size:48px;">${cur.weight}</span>
+        <span class="bw-kg">kg</span>
+        ${cur.fatPct != null ? `<span class="fat-val" style="margin-left:10px;">体脂肪 ${cur.fatPct}%</span>` : ''}
+      </div>
+      <div class="bw-date">${fmtDateFull(cur.date)}</div>`;
+  } else {
+    bwCard.style.display = 'none';
+  }
+
+  // 今週サマリー
+  const { wDays, cDays, totalVol } = getWeekStats();
+  document.getElementById('home-week').innerHTML = `
+    <div class="home-week-item">
+      <div class="home-week-num">${wDays}</div>
+      <div class="home-week-label">💪 ウエイト</div>
+    </div>
+    <div class="home-week-item">
+      <div class="home-week-num">${cDays}</div>
+      <div class="home-week-label">🏃 有酸素</div>
+    </div>
+    <div class="home-week-item">
+      <div class="home-week-num" style="font-size:16px;">${totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'t' : totalVol+'kg'}</div>
+      <div class="home-week-label">総ボリューム</div>
+    </div>`;
+
+  // PR一覧
+  const prs = getTopPRs(5);
+  const prEl = document.getElementById('home-pr');
+  if (!prs.length) {
+    prEl.innerHTML = `<div style="color:var(--sub);font-size:12px;padding:10px 0;">記録を追加するとPRが表示されます</div>`;
+  } else {
+    prEl.innerHTML = prs.map(p => `
+      <div class="pr-row">
+        <span class="pr-exercise">${esc(p.exercise)}</span>
+        <span>
+          <span class="pr-val">${p.weight}kg × ${p.reps}rep</span>
+          <div class="pr-date">${fmtDateFull(p.date)}</div>
+        </span>
+      </div>`).join('');
+  }
 }
 
 /* ─────────────────────────────────────────
