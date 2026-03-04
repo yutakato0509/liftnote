@@ -714,6 +714,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .ob-btn { width:100%; max-width:440px; padding:18px; border-radius:16px; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-size:16px; font-weight:800; border:none; cursor:pointer; font-family:inherit; -webkit-appearance:none; box-shadow:0 8px 28px rgba(255,85,0,.4); letter-spacing:.05em; transition:transform .12s; }
 .ob-btn:active { transform:scale(.97); }
 
+/* ═══════════ INSIGHT BADGE ═══════════ */
+.insight-badge {
+  display:inline-flex; align-items:center; gap:7px;
+  background:rgba(255,85,0,.07); border:1px solid rgba(255,85,0,.18);
+  border-radius:9px; padding:8px 12px; width:100%;
+  font-size:12px; font-weight:700; color:var(--text); line-height:1.4;
+}
+
 /* ═══════════ GOAL MODAL ═══════════ */
 .goal-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:600; display:none; align-items:flex-end; justify-content:center; }
 .goal-modal-overlay.open { display:flex; }
@@ -749,32 +757,25 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
      VIEW: ホーム（ダッシュボード）
 ════════════════════════════════════════ -->
 <div id="view-home" class="view active">
+  <!-- Hero: greeting + 体重 + insight + streaks -->
   <div class="card">
     <div class="home-greeting" id="home-greeting"></div>
-    <div class="home-sub" id="home-sub"></div>
+    <div id="home-hero-bw" style="margin:6px 0 0;"></div>
+    <div id="home-insight-badge" style="margin-top:10px;display:none;"></div>
+    <div class="home-streak-row" style="margin-top:14px;margin-bottom:0;">
+      <div class="home-streak-mini" id="home-w-streak"></div>
+      <div class="home-streak-mini green" id="home-c-streak"></div>
+    </div>
   </div>
 
-  <!-- ストリーク -->
-  <div class="home-streak-row">
-    <div class="home-streak-mini" id="home-w-streak"></div>
-    <div class="home-streak-mini green" id="home-c-streak"></div>
-  </div>
-
-  <!-- 最新体重 -->
-  <div class="card" id="home-bw-card" style="display:none;">
-    <div class="card-label" style="color:var(--amber);">Current Weight</div>
-    <div class="glow-line" style="background:linear-gradient(90deg,transparent,rgba(255,149,0,.2) 50%,transparent);"></div>
-    <div id="home-bw"></div>
-  </div>
-
-  <!-- 今週のサマリー -->
+  <!-- This Week -->
   <div class="card">
     <div class="card-label">This Week</div>
     <div class="glow-line"></div>
     <div class="home-week-grid" id="home-week"></div>
   </div>
 
-  <!-- 目標 -->
+  <!-- Goals -->
   <div class="card" id="home-goals-card">
     <div class="card-label" style="display:flex;justify-content:space-between;align-items:center;">
       <span>🎯 Goals</span>
@@ -784,14 +785,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div id="home-goals"></div>
   </div>
 
-  <!-- インサイト -->
-  <div class="card" id="home-insights-card" style="display:none;">
-    <div class="card-label">💡 Insights</div>
-    <div class="glow-line"></div>
-    <div id="home-insights"></div>
-  </div>
-
-  <!-- PR一覧 -->
+  <!-- PR Top 3 -->
   <div class="card" id="home-pr-card">
     <div class="card-label">🏆 Personal Records</div>
     <div class="glow-line"></div>
@@ -897,11 +891,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       <input type="date" id="c-date">
     </div>
 
-    <div class="field">
-      <label>メモ (任意)</label>
-      <textarea id="c-memo" placeholder="コース、体感など..."></textarea>
-    </div>
-
     <div id="c-edit-banner" class="edit-banner" style="display:none;"></div>
     <button class="btn btn-green" id="c-save-btn" onclick="saveCardio()">REC ＋ 記録する</button>
     <button class="btn btn-cancel" id="c-cancel-btn" onclick="cancelEdit('c')" style="display:none;">✕ キャンセル</button>
@@ -952,22 +941,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 
   <div class="section-title" style="margin:8px 2px 12px;">最近のログ</div>
   <div id="b-recent"></div>
-</div>
-
-<!-- ═══════════════════════════════════════
-     VIEW: 履歴
-════════════════════════════════════════ -->
-<div id="view-history" class="view">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-    <div class="chips" style="margin-bottom:0;flex:1;">
-      <div class="chip active" onclick="setFilter('all',this)">ALL</div>
-      <div class="chip" onclick="setFilter('weight',this)">💪 ウエイト</div>
-      <div class="chip" onclick="setFilter('cardio',this)">🏃 有酸素</div>
-      <div class="chip" onclick="setFilter('body',this)">⚖️ 体重</div>
-    </div>
-    <button class="btn-ghost" onclick="exportCSV()" style="flex-shrink:0;margin-left:8px;margin-bottom:8px;">⬇ CSV</button>
-  </div>
-  <div id="hist-list"></div>
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -1058,6 +1031,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div class="glow-line"></div>
     <div id="cal-monthly-stats"></div>
   </div>
+
+  <!-- 履歴リスト -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 4px;">
+    <div class="chips" style="margin-bottom:0;flex:1;">
+      <div class="chip active" onclick="setFilter('all',this)">ALL</div>
+      <div class="chip" onclick="setFilter('weight',this)">💪 ウエイト</div>
+      <div class="chip" onclick="setFilter('cardio',this)">🏃 有酸素</div>
+      <div class="chip" onclick="setFilter('body',this)">⚖️ 体重</div>
+    </div>
+    <button class="btn-ghost" onclick="exportCSV()" style="flex-shrink:0;margin-left:8px;margin-bottom:8px;">⬇ CSV</button>
+  </div>
+  <div id="hist-list"></div>
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -1102,9 +1087,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   </div>
   <div class="nav-item" onclick="nav('body',this)">
     <span class="nav-icon">⚖️</span>体重
-  </div>
-  <div class="nav-item" onclick="nav('history',this)">
-    <span class="nav-icon">📋</span>履歴
   </div>
   <div class="nav-item" onclick="nav('graph',this)">
     <span class="nav-icon">📈</span>グラフ
@@ -1271,7 +1253,7 @@ let editingId = { w: null, c: null, b: null };
 
 // 指定ビューに切り替える（ナビアイコンのactive状態も同期）
 function goToView(view) {
-  const VIEWS = ['home','weight','cardio','body','history','graph','photo','calendar'];
+  const VIEWS = ['home','weight','cardio','body','graph','photo','calendar'];
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach((n, i) => n.classList.toggle('active', VIEWS[i] === view));
   document.getElementById('view-' + view).classList.add('active');
@@ -1280,10 +1262,9 @@ function goToView(view) {
 function nav(view, el) {
   goToView(view);
   if (view === 'home')     renderHome();
-  if (view === 'history')  renderHistory();
   if (view === 'graph')    { fillExSel(); setTimeout(drawBwChart, 80); }
   if (view === 'photo')    renderPhotoGrid();
-  if (view === 'calendar') renderCalendar();
+  if (view === 'calendar') { renderCalendar(); renderHistory(); }
 }
 
 // 新しい順（日付降順）で並び替え
@@ -1310,7 +1291,6 @@ function resetCForm() {
   document.getElementById('c-duration').value = '';
   document.getElementById('c-distance').value = '';
   document.getElementById('c-date').value     = today();
-  document.getElementById('c-memo').value     = '';
   document.getElementById('c-edit-banner').style.display = 'none';
   document.getElementById('c-save-btn').textContent = 'REC ＋ 記録する';
   document.getElementById('c-cancel-btn').style.display = 'none';
@@ -1356,7 +1336,6 @@ function editRecord(type, id) {
     document.getElementById('c-duration').value = data.duration || '';
     document.getElementById('c-distance').value = data.distance || '';
     document.getElementById('c-date').value     = data.date     || today();
-    document.getElementById('c-memo').value     = data.memo     || '';
     document.getElementById('c-edit-banner').textContent = `✏️ 編集中: ${data.type} ${data.duration}分`;
     document.getElementById('c-edit-banner').style.display = 'block';
     document.getElementById('c-save-btn').textContent = '✓ 更新する';
@@ -1499,18 +1478,16 @@ function saveCardio() {
   const duration = parseInt(document.getElementById('c-duration').value);
   const distance = parseFloat(document.getElementById('c-distance').value);
   const date     = document.getElementById('c-date').value;
-  const memo     = document.getElementById('c-memo').value.trim();
-
   if (!date)                   { alert('日付を入力してください'); return; }
   if (!duration || duration<1) { alert('時間を入力してください'); return; }
 
   const arr = load(K.c);
   if (editingId.c) {
     const idx = arr.findIndex(r => r.id === editingId.c);
-    if (idx !== -1) arr[idx] = { ...arr[idx], type, duration, distance: isNaN(distance) ? 0 : distance, date, memo };
+    if (idx !== -1) arr[idx] = { ...arr[idx], type, duration, distance: isNaN(distance) ? 0 : distance, date };
     toast('✅ 更新しました！');
   } else {
-    arr.push({ id: uid(), date, type, duration, distance: isNaN(distance) ? 0 : distance, memo });
+    arr.push({ id: uid(), date, type, duration, distance: isNaN(distance) ? 0 : distance });
     toast('🔥 記録しました！');
   }
   save(K.c, arr);
@@ -1536,7 +1513,6 @@ function renderCRecent() {
             ? `<span class="rec-sep">·</span><span class="rec-num rec-num-g">${r.distance}</span><span class="rec-unit">km</span>`
             : ''}
         </div>
-        ${r.memo ? `<div class="rec-memo">📝 ${esc(r.memo)}</div>` : ''}
       </div>
       <div class="rec-card-right">
         <div class="rec-date">${fmtDateFull(r.date)}</div>
@@ -1865,12 +1841,16 @@ function drawBwChart() {
 }
 
 function fillExSel() {
-  const exercises = [...new Set(load(K.w).map(r=>r.exercise))].sort();
+  const wAll = load(K.w);
+  const exercises = [...new Set(wAll.map(r=>r.exercise))].sort();
   const sel = document.getElementById('ex-sel');
   const cur = sel.value;
+  // 現在の選択がなければ最後に記録した種目をデフォルト選択
+  const lastEx = wAll.length ? sortDesc(wAll)[0].exercise : '';
+  const selected = (cur && exercises.includes(cur)) ? cur : lastEx;
   sel.innerHTML = '<option value="">-- 種目を選んでください --</option>' +
-    exercises.map(e => `<option${e===cur?' selected':''}>${e}</option>`).join('');
-  if (cur && exercises.includes(cur)) drawExChart();
+    exercises.map(e => `<option${e===selected?' selected':''}>${e}</option>`).join('');
+  if (selected) drawExChart();
 }
 
 function drawExChart() {
@@ -2041,7 +2021,7 @@ function renderGoals() {
   const curW  = bRecs.length ? bRecs[0].weight : null;
   const el    = document.getElementById('home-goals');
   if (!g.targetWeight && !g.weeklyW && !g.weeklyC) {
-    el.innerHTML = `<div style="color:var(--sub);font-size:12px;padding:4px 0;">目標を設定してトレーニングを管理しよう！<br><button class="btn-save-tpl" style="margin-top:8px;" onclick="openGoalModal()">+ 目標を追加</button></div>`;
+    el.innerHTML = `<div style="color:var(--sub);font-size:12px;padding:6px 0 2px;">まだ目標が設定されていません</div>`;
     return;
   }
   let html = '';
@@ -2087,58 +2067,62 @@ function saveGoals() {
 /* ─────────────────────────────────────────
    INSIGHTS
 ───────────────────────────────────────── */
-function renderInsights() {
-  const insights = generateInsights();
-  const card = document.getElementById('home-insights-card');
-  const el   = document.getElementById('home-insights');
-  if (!insights.length) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
-  el.innerHTML = insights.map(i => `
-    <div class="insight-row">
-      <div class="insight-icon">${i.icon}</div>
-      <div><div class="insight-msg">${i.msg}</div>${i.sub ? `<div class="insight-sub">${i.sub}</div>` : ''}</div>
-    </div>`).join('');
-}
-
 function generateInsights() {
-  const insights = [];
-  const wAll = load(K.w), bAll = load(K.b).sort((a,b)=>a.date.localeCompare(b.date));
+  const wAll   = load(K.w);
+  const cAll   = load(K.c);
+  const bAll   = load(K.b).sort((a,b) => a.date.localeCompare(b.date));
+  const t      = today();
+  const cut7   = daysAgo(7);
+  const cut14  = daysAgo(14);
+  const cut30  = daysAgo(30);
 
-  // PR改善インサイト（過去30日以内に記録したPR）
-  const cutoff30 = daysAgo(30);
-  const prs = getTopPRs(10);
-  prs.forEach(p => {
-    if (p.date >= cutoff30) {
-      insights.push({ icon:'🏆', msg:`${p.exercise} で自己ベスト更新！`, sub:`${p.weight}kg × ${p.reps}rep — ${fmtDateFull(p.date)}` });
-    }
-  });
+  // 1. 直近7日以内にPR更新 → 最優先で褒める
+  const prs = getTopPRs(20);
+  const recentPR = prs.find(p => p.date >= cut7);
+  if (recentPR) return [{ icon:'🏆', msg:`${recentPR.exercise} で自己ベスト！`, sub:`${recentPR.weight}kg × ${recentPR.reps}rep` }];
 
-  // 体重変化インサイト（30日前との比較）
-  if (bAll.length >= 2) {
-    const recent = bAll[bAll.length-1];
-    const old    = bAll.find(r => r.date <= cutoff30);
-    if (old && recent.date !== old.date) {
-      const diff = recent.weight - old.weight;
-      if (Math.abs(diff) >= 0.5) {
-        const dir   = diff < 0 ? '減量' : '増量';
-        const color = diff < 0 ? '🟢' : '🔴';
-        insights.push({ icon: diff < 0 ? '📉' : '📈', msg:`この1ヶ月で${Math.abs(diff).toFixed(1)}kg${dir}`, sub:`${old.weight}kg → ${recent.weight}kg` });
-      }
+  // 2. 目標体重まで1kg以内
+  const goals = loadGoals();
+  if (goals.targetWeight && bAll.length) {
+    const cur = bAll[bAll.length - 1].weight;
+    const diff = cur - goals.targetWeight;
+    if (diff > 0 && diff <= 1) return [{ icon:'🎯', msg:`目標まであと ${diff.toFixed(1)}kg！`, sub:`現在 ${cur}kg → 目標 ${goals.targetWeight}kg` }];
+    if (diff <= 0)              return [{ icon:'🎉', msg:`目標体重 ${goals.targetWeight}kg 達成！`, sub:`現在 ${cur}kg` }];
+  }
+
+  // 3. 14日以上記録していない種目がある（サボり検知）
+  if (wAll.length) {
+    const exMap = {};
+    wAll.forEach(r => { if (!exMap[r.exercise] || r.date > exMap[r.exercise]) exMap[r.exercise] = r.date; });
+    const stale = Object.entries(exMap).find(([, d]) => d < cut14);
+    if (stale) return [{ icon:'💤', msg:`${stale[0]} が ${Math.round((new Date(t)-new Date(stale[1]))/(864e5))}日間お休み中`, sub:'そろそろ再開してみよう' }];
+  }
+
+  // 4. 体重が2週間変化なし（0.3kg未満）→ 刺激提案
+  if (bAll.length >= 3) {
+    const recent = bAll[bAll.length - 1];
+    const prev   = bAll.find(r => r.date <= cut14);
+    if (prev && Math.abs(recent.weight - prev.weight) < 0.3) {
+      return [{ icon:'📊', msg:'体重が2週間ほぼ横ばいです', sub:'食事量や種目の負荷を見直してみよう' }];
     }
   }
 
-  // 連続記録インサイト（7日以上）
-  const wStreak = calcStreak(wAll);
-  const cStreak = calcStreak(load(K.c));
-  if (wStreak >= 7)  insights.push({ icon:'🔥', msg:`筋トレ ${wStreak}日連続中！`, sub:'素晴らしい継続力です' });
-  if (cStreak >= 7)  insights.push({ icon:'🏃', msg:`有酸素 ${cStreak}日連続中！`, sub:'有酸素習慣が身についてきた' });
+  // 5. 今週の週次ゴール達成
+  const { wDays, cDays } = getWeekStats();
+  if (goals.weeklyW && wDays >= goals.weeklyW) return [{ icon:'✅', msg:`今週のウエイト目標 ${goals.weeklyW}回 達成！`, sub:'このまま維持しよう' }];
+  if (goals.weeklyC && cDays >= goals.weeklyC) return [{ icon:'✅', msg:`今週の有酸素目標 ${goals.weeklyC}回 達成！`, sub:'素晴らしいペースです' }];
 
-  // 今月のトレーニング日数
-  const prefix = today().slice(0,7) + '-';
-  const monthW = new Set(wAll.filter(r=>r.date.startsWith(prefix)).map(r=>r.date)).size;
-  if (monthW >= 10) insights.push({ icon:'💪', msg:`今月すでに ${monthW}日 トレーニング済み！`, sub:'このペースで月末まで頑張ろう' });
+  // 6. 30日体重変化
+  if (bAll.length >= 2) {
+    const recent = bAll[bAll.length - 1];
+    const old    = bAll.find(r => r.date <= cut30);
+    if (old && Math.abs(recent.weight - old.weight) >= 0.5) {
+      const diff = recent.weight - old.weight;
+      return [{ icon: diff < 0 ? '📉' : '📈', msg:`この1ヶ月で ${Math.abs(diff).toFixed(1)}kg ${diff < 0 ? '減量' : '増量'}`, sub:`${old.weight}kg → ${recent.weight}kg` }];
+    }
+  }
 
-  return insights.slice(0, 4);
+  return [];
 }
 
 /* ─────────────────────────────────────────
@@ -2707,7 +2691,32 @@ function renderHome() {
                  : h < 17 ? 'こんにちは 💪'
                  : 'お疲れ様です 🌆';
   document.getElementById('home-greeting').textContent = greeting;
-  document.getElementById('home-sub').textContent = `今日も記録していこう！`;
+
+  // 最新体重 (hero)
+  const bRecs = sortDesc(load(K.b));
+  const heroBw = document.getElementById('home-hero-bw');
+  if (bRecs.length) {
+    const cur = bRecs[0];
+    heroBw.innerHTML = `
+      <div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">
+        <span style="font-size:42px;font-weight:900;letter-spacing:-1px;color:var(--amber);">${cur.weight}</span>
+        <span style="font-size:16px;color:var(--sub);font-weight:700;">kg</span>
+        ${cur.fatPct != null ? `<span style="font-size:13px;color:var(--accent2);margin-left:6px;font-weight:700;">体脂肪 ${cur.fatPct}%</span>` : ''}
+        <span style="font-size:11px;color:var(--sub);margin-left:4px;">${fmtDateFull(cur.date)}</span>
+      </div>`;
+  } else {
+    heroBw.innerHTML = `<div style="font-size:12px;color:var(--sub);margin:4px 0;">体重を記録すると表示されます</div>`;
+  }
+
+  // インサイトバッジ
+  const ins = generateInsights();
+  const badge = document.getElementById('home-insight-badge');
+  if (ins.length) {
+    badge.style.display = 'flex';
+    badge.innerHTML = `<div class="insight-badge">${ins[0].icon} <span>${ins[0].msg}${ins[0].sub ? `<br><span style="font-weight:400;color:var(--sub);">${ins[0].sub}</span>` : ''}</span></div>`;
+  } else {
+    badge.style.display = 'none';
+  }
 
   // ストリーク
   ['w','c'].forEach(type => {
@@ -2719,23 +2728,6 @@ function renderHome() {
       <div class="home-streak-mini-label">${lbl} streak</div>
       <div class="home-streak-mini-msg">${streakMsg(n, type)}</div>`;
   });
-
-  // 最新体重
-  const bRecs = load(K.b).sort((a,b) => b.date.localeCompare(a.date));
-  const bwCard = document.getElementById('home-bw-card');
-  if (bRecs.length) {
-    bwCard.style.display = 'block';
-    const cur = bRecs[0];
-    document.getElementById('home-bw').innerHTML = `
-      <div class="bw-hero" style="margin-bottom:4px;">
-        <span class="bw-big" style="font-size:48px;">${cur.weight}</span>
-        <span class="bw-kg">kg</span>
-        ${cur.fatPct != null ? `<span class="fat-val" style="margin-left:10px;">体脂肪 ${cur.fatPct}%</span>` : ''}
-      </div>
-      <div class="bw-date">${fmtDateFull(cur.date)}</div>`;
-  } else {
-    bwCard.style.display = 'none';
-  }
 
   // 今週サマリー
   const { wDays, cDays, totalVol } = getWeekStats();
@@ -2755,10 +2747,9 @@ function renderHome() {
 
   // 目標
   renderGoals();
-  // インサイト
-  renderInsights();
-  // PR一覧
-  const prs = getTopPRs(5);
+
+  // PR Top 3
+  const prs = getTopPRs(3);
   const prEl = document.getElementById('home-pr');
   if (!prs.length) {
     prEl.innerHTML = `<div style="color:var(--sub);font-size:12px;padding:10px 0;">記録を追加するとPRが表示されます</div>`;
