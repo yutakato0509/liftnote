@@ -270,6 +270,42 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .bw-diff { font-size: 14px; font-weight: 800; margin-left: 8px; margin-bottom: 8px; }
 .bw-date { font-size: 12px; color: var(--sub); margin-top: 4px; }
 
+/* ═══════════ FAB ═══════════ */
+.nav-item-fab .nav-icon {
+  width: 50px; height: 50px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; line-height: 1;
+  box-shadow: 0 4px 18px rgba(255,85,0,.55);
+  margin-top: -14px;
+  transition: transform .2s, box-shadow .2s;
+}
+.nav-item-fab.active .nav-icon { box-shadow: 0 6px 24px rgba(255,85,0,.75); transform: scale(1.08); }
+.nav-item-fab.active { color: var(--text); }
+.nav-item-fab.active::after { display: none; }
+
+/* ═══════════ WEEK DOTS ═══════════ */
+.week-dots-row { display:flex; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+.week-dot-item { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.week-dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.07); border:1px solid #2a2a2a; transition:transform .2s; }
+.week-dot.has-w { background:var(--accent); border:none; }
+.week-dot.has-c { background:var(--green); border:none; }
+.week-dot.has-wc { background:linear-gradient(135deg,var(--accent),var(--green)); border:none; }
+.week-dot.is-today { outline:2px solid rgba(255,85,0,.4); outline-offset:2px; border-radius:50%; }
+.week-dot-label { font-size:9px; font-weight:800; color:var(--sub); }
+
+/* ═══════════ PR RANK ═══════════ */
+.pr-rank { font-size:18px; flex-shrink:0; margin-right:2px; }
+
+/* ═══════════ STREAK ANIM ═══════════ */
+@keyframes streakPop {
+  0%   { transform:scale(.6); opacity:0; }
+  70%  { transform:scale(1.15); }
+  100% { transform:scale(1);  opacity:1; }
+}
+.home-streak-mini-num { animation: streakPop .45s cubic-bezier(.34,1.56,.64,1) both; }
+
 /* ═══════════ BOTTOM NAV ═══════════ */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
@@ -643,8 +679,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .cal-cell.other-month .cal-num { opacity:.2; }
 .cal-cell.selected { background:rgba(255,85,0,.08) !important; border:1px solid rgba(255,85,0,.25) !important; }
 .cal-dots { display:flex; gap:2px; justify-content:center; }
-.cal-dot { width:5px; height:5px; border-radius:50%; }
+.cal-dot { width:7px; height:7px; border-radius:50%; }
 .cal-dot-w { background:var(--accent); } .cal-dot-c { background:var(--green); } .cal-dot-b { background:var(--amber); }
+.cal-cell.has-w { background:rgba(255,85,0,.07); }
+.cal-cell.has-c { background:rgba(0,212,106,.07); }
+.cal-cell.has-wc { background:linear-gradient(135deg,rgba(255,85,0,.08),rgba(0,212,106,.08)); }
 
 /* ═══════════ MONTHLY REPORT ═══════════ */
 .monthly-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
@@ -1064,7 +1103,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   <div class="nav-item active" onclick="nav('home',this)">
     <span class="nav-icon">🏠</span>ホーム
   </div>
-  <div class="nav-item" onclick="nav('record',this)">
+  <div class="nav-item nav-item-fab" onclick="nav('record',this)">
     <span class="nav-icon">➕</span>記録
   </div>
   <div class="nav-item" onclick="nav('calendar',this)">
@@ -1931,8 +1970,9 @@ function _drawCalendar() {
     if (hasW) dots += `<div class="cal-dot cal-dot-w"></div>`;
     if (hasC) dots += `<div class="cal-dot cal-dot-c"></div>`;
     if (hasB) dots += `<div class="cal-dot cal-dot-b"></div>`;
+    const actCls = hasW && hasC ? ' has-wc' : hasW ? ' has-w' : hasC ? ' has-c' : '';
     html += `
-      <div class="cal-cell col-${col}${isToday?' today':''}${isSel?' selected':''}" onclick="calDayClick('${dateStr}')">
+      <div class="cal-cell col-${col}${isToday?' today':''}${isSel?' selected':''}${actCls}" onclick="calDayClick('${dateStr}')">
         <div class="cal-num">${d}</div>
         ${dots ? `<div class="cal-dots">${dots}</div>` : ''}
       </div>`;
@@ -2721,6 +2761,22 @@ function renderHome() {
 
   // 今週サマリー
   const { wDays, cDays, totalVol } = getWeekStats();
+  const dow = parseDate(today()).dow;
+  const monday = daysAgo(dow === 0 ? 6 : dow - 1);
+  const [wy, wm, wd] = monday.split('-').map(Number);
+  const weekDays = Array.from({length: 7}, (_, i) =>
+    new Date(Date.UTC(wy, wm-1, wd+i, 12)).toISOString().slice(0, 10));
+  const wDates = new Set(load(K.w).map(r => r.date));
+  const cDates = new Set(load(K.c).map(r => r.date));
+  const dotLabels = ['月','火','水','木','金','土','日'];
+  const dotsHtml = weekDays.map((d, i) => {
+    const hasW = wDates.has(d), hasC = cDates.has(d), isTd = d === today();
+    const cls = hasW && hasC ? 'has-wc' : hasW ? 'has-w' : hasC ? 'has-c' : '';
+    return `<div class="week-dot-item">
+      <div class="week-dot ${cls}${isTd?' is-today':''}"></div>
+      <div class="week-dot-label">${dotLabels[i]}</div>
+    </div>`;
+  }).join('');
   document.getElementById('home-week').innerHTML = `
     <div class="home-week-item">
       <div class="home-week-num">${wDays}</div>
@@ -2733,7 +2789,8 @@ function renderHome() {
     <div class="home-week-item">
       <div class="home-week-num" style="font-size:16px;">${totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'t' : totalVol+'kg'}</div>
       <div class="home-week-label">総ボリューム</div>
-    </div>`;
+    </div>
+    <div class="week-dots-row" style="grid-column:1/-1;">${dotsHtml}</div>`;
 
   // 目標
   renderGoals();
@@ -2749,10 +2806,12 @@ function renderPRList(limit) {
     prEl.innerHTML = `<div style="color:var(--sub);font-size:12px;padding:10px 0;">記録を追加するとPRが表示されます</div>`;
     return;
   }
+  const medals = ['🥇','🥈','🥉'];
   const show = allPRs.slice(0, limit);
   const hasMore = allPRs.length > limit;
-  prEl.innerHTML = show.map(p => `
+  prEl.innerHTML = show.map((p, i) => `
     <div class="pr-row">
+      <span class="pr-rank">${medals[i] || ''}</span>
       <span class="pr-exercise">${esc(p.exercise)}</span>
       <span>
         <span class="pr-val">${p.weight}kg × ${p.reps}rep</span>
