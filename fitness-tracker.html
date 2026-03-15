@@ -1107,49 +1107,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 /* ═══════════ RECENT PR ═══════════ */
 .recent-pr-empty { font-size:11px; color:var(--sub); font-weight:700; padding:10px 0; letter-spacing:.04em; }
 
-/* ═══════════ STRENGTH SCORE ═══════════ */
-.ss-wrap { display:flex; align-items:flex-end; gap:14px; margin-bottom:14px; }
-.ss-score {
-  font-size:80px; font-weight:900; line-height:.9;
-  background:linear-gradient(135deg,#ff5500 0%,#ff2d55 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-  font-variant-numeric:tabular-nums;
-}
-.ss-meta { padding-bottom:6px; }
-.ss-level { font-size:14px; font-weight:900; letter-spacing:.04em; }
-.ss-desc  { font-size:10px; color:var(--sub); margin-top:3px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
-.rm-grid  { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.rm-item  { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:10px 12px; }
-.rm-ex    { font-size:10px; color:var(--sub); font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.rm-val   { font-size:22px; font-weight:900; color:var(--text); line-height:1; font-variant-numeric:tabular-nums; }
-.rm-val span { font-size:11px; color:var(--sub); font-weight:700; margin-left:2px; }
-
-/* ═══════════ YEAR HEATMAP ═══════════ */
-.heatmap-outer { overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-.heatmap-outer::-webkit-scrollbar { display:none; }
-.heatmap-month-row { display:flex; gap:4px; margin-bottom:5px; min-width:max-content; padding-left:22px; }
-.hm-month-lbl { font-size:9px; color:rgba(255,255,255,.3); font-weight:700; letter-spacing:.04em; width:11px; flex-shrink:0; overflow:visible; white-space:nowrap; }
-.heatmap-body  { display:flex; gap:4px; min-width:max-content; }
-.heatmap-dow-col { display:flex; flex-direction:column; gap:3px; margin-right:2px; padding-top:0; }
-.heatmap-dow-lbl { font-size:9px; color:rgba(255,255,255,.2); font-weight:700; height:11px; line-height:11px; text-align:right; min-width:14px; }
-.heatmap-week  { display:flex; flex-direction:column; gap:3px; }
-.hm-cell {
-  width:11px; height:11px; border-radius:2px;
-  background:rgba(255,255,255,.05); flex-shrink:0;
-}
-.hm-cell.w1 { background:rgba(255,85,0,.25); }
-.hm-cell.w2 { background:rgba(255,85,0,.52); }
-.hm-cell.w3 { background:rgba(255,85,0,.78); }
-.hm-cell.w4 { background:#ff5500; box-shadow:0 0 4px rgba(255,85,0,.5); }
-.hm-cell.c1 { background:rgba(0,212,106,.3); }
-.hm-cell.c2 { background:rgba(0,212,106,.6); }
-.hm-cell.wc { background:linear-gradient(135deg,#ff5500 0%,#00d46a 100%); }
-.hm-cell.today-cell { outline:1.5px solid rgba(255,85,0,.8); outline-offset:1px; border-radius:3px; }
-.hm-cell.future { opacity:.12; }
-.heatmap-legend { display:flex; align-items:center; gap:6px; margin-top:10px; justify-content:flex-end; }
-.hm-leg-lbl { font-size:9px; color:rgba(255,255,255,.25); font-weight:700; }
-.hm-leg-cells { display:flex; gap:3px; }
-
 /* ═══════════ TODAY'S WORKOUT ═══════════ */
 .today-done-item {
   display:flex; justify-content:space-between; align-items:center;
@@ -1276,33 +1233,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     </div>
     <div class="glow-line"></div>
     <div id="home-goals"></div>
-  </div>
-
-  <!-- Strength Score -->
-  <div class="card" id="home-ss-card" style="display:none;">
-    <div class="card-label">⚡ Strength Score</div>
-    <div class="glow-line"></div>
-    <div id="home-ss-content"></div>
-  </div>
-
-  <!-- Year Activity Heatmap -->
-  <div class="card">
-    <div class="card-label">🗓 Year Activity</div>
-    <div class="glow-line"></div>
-    <div class="heatmap-outer">
-      <div id="year-heatmap"></div>
-    </div>
-    <div class="heatmap-legend">
-      <span class="hm-leg-lbl">Less</span>
-      <div class="hm-leg-cells">
-        <div class="hm-cell"></div>
-        <div class="hm-cell w1"></div>
-        <div class="hm-cell w2"></div>
-        <div class="hm-cell w3"></div>
-        <div class="hm-cell w4"></div>
-      </div>
-      <span class="hm-leg-lbl">More</span>
-    </div>
   </div>
 
   <!-- App Utilities -->
@@ -3508,9 +3438,6 @@ function renderHome() {
   // 目標
   renderGoals();
 
-  // Strength Score & Heatmap
-  renderStrengthScore();
-  renderYearHeatmap();
 }
 
 /* ─────────────────────────────────────────
@@ -3732,155 +3659,6 @@ function calc1RM(weight, reps) {
   if (!reps || reps <= 1) return weight;
   const r = Math.min(reps, 10); // Brzycki 精度は10rep以内
   return Math.round(weight / (1.0278 - 0.0278 * r));
-}
-
-function getExercise1RMs() {
-  const all = load(K.w);
-  const exs = [...new Set(all.map(r => r.exercise))];
-  return exs.map(ex => {
-    let best = 0;
-    all.filter(r => r.exercise === ex).forEach(r => {
-      const sets = r.setData || [{ weight: r.weight||0, reps: r.reps||0 }];
-      sets.forEach(s => {
-        if (s.weight > 0 && s.reps > 0) {
-          const rm = calc1RM(s.weight, s.reps);
-          if (rm > best) best = rm;
-        }
-      });
-    });
-    return { exercise: ex, rm1: best };
-  }).filter(e => e.rm1 > 0).sort((a,b) => b.rm1 - a.rm1);
-}
-
-/* ─────────────────────────────────────────
-   STRENGTH SCORE
-───────────────────────────────────────── */
-function renderStrengthScore() {
-  const rms  = getExercise1RMs();
-  const card = document.getElementById('home-ss-card');
-  if (!rms.length) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
-
-  const top5  = rms.slice(0, 5);
-  const score = top5.reduce((a, e) => a + e.rm1, 0);
-  const levelInfo =
-    score < 200  ? { label:'Beginner',    color:'var(--sub)' }   :
-    score < 400  ? { label:'Intermediate',color:'var(--amber)' } :
-    score < 700  ? { label:'Advanced',    color:'var(--accent)' }:
-    score < 1000 ? { label:'Elite',       color:'var(--green)' } :
-                   { label:'GOD-TIER',    color:'#ffd60a' };
-
-  const show = rms.slice(0, 4);
-  document.getElementById('home-ss-content').innerHTML = `
-    <div class="ss-wrap">
-      <div class="ss-score">${score}</div>
-      <div class="ss-meta">
-        <div class="ss-level" style="color:${levelInfo.color};">${levelInfo.label}</div>
-        <div class="ss-desc">Top-5 推定1RM 合計</div>
-      </div>
-    </div>
-    <div class="rm-grid">
-      ${show.map(e => `
-        <div class="rm-item">
-          <div class="rm-ex">${esc(e.exercise)}</div>
-          <div class="rm-val">${e.rm1}<span>kg 1RM</span></div>
-        </div>`).join('')}
-    </div>`;
-}
-
-/* ─────────────────────────────────────────
-   YEAR ACTIVITY HEATMAP
-───────────────────────────────────────── */
-function renderYearHeatmap() {
-  const el = document.getElementById('year-heatmap');
-  if (!el) return;
-
-  const wAll = load(K.w), cAll = load(K.c);
-  const t    = today();
-
-  // date → { vol, hasC }
-  const map = {};
-  wAll.forEach(r => {
-    const vol = r.setData
-      ? r.setData.reduce((a,s) => a+(s.weight||0)*(s.reps||0), 0)
-      : (r.weight||0)*(r.reps||0)*(r.sets||1);
-    if (!map[r.date]) map[r.date] = { vol:0, hasC:false };
-    map[r.date].vol += vol;
-  });
-  cAll.forEach(r => {
-    if (!map[r.date]) map[r.date] = { vol:0, hasC:false };
-    map[r.date].hasC = true;
-  });
-
-  // ボリューム四分位
-  const vols = Object.values(map).map(d => d.vol).filter(v => v > 0).sort((a,b) => a-b);
-  const q1 = vols[Math.floor(vols.length*.25)] || 500;
-  const q2 = vols[Math.floor(vols.length*.5)]  || 1500;
-  const q3 = vols[Math.floor(vols.length*.75)] || 3000;
-
-  // 今日から52週前の月曜を起点に
-  const [ty, tm, td] = t.split('-').map(Number);
-  const todayD = new Date(Date.UTC(ty, tm-1, td, 12));
-  const dow    = todayD.getUTCDay();
-  const daysToMon = dow === 0 ? 6 : dow - 1;
-  const thisMonday = new Date(todayD.getTime() - daysToMon * 86400000);
-  const startDate  = new Date(thisMonday.getTime() - 51 * 7 * 86400000);
-
-  // 52週 × 7日 のデータ構造を作る
-  const weeks = [];
-  const monthLabelMap = {}; // weekIdx → label
-  let cur = new Date(startDate.getTime());
-  let lastMonth = -1;
-  for (let w = 0; w < 52; w++) {
-    const week = [];
-    for (let d = 0; d < 7; d++) {
-      const ds = cur.toISOString().slice(0, 10);
-      const m  = cur.getUTCMonth();
-      if (d === 0 && m !== lastMonth) { monthLabelMap[w] = (m+1)+'月'; lastMonth = m; }
-      week.push(ds);
-      cur = new Date(cur.getTime() + 86400000);
-    }
-    weeks.push(week);
-  }
-
-  // 月ラベル行
-  let monthRow = '<div class="heatmap-month-row">';
-  weeks.forEach((_, wi) => {
-    const lbl = monthLabelMap[wi] || '';
-    monthRow += `<div class="hm-month-lbl">${lbl}</div>`;
-  });
-  monthRow += '</div>';
-
-  // DOW ラベル + セルグリッド
-  const dowLabels = ['月','','水','','金','','日'];
-  let body = '<div class="heatmap-body">';
-  // DOW列
-  body += '<div class="heatmap-dow-col">' + dowLabels.map(l => `<div class="heatmap-dow-lbl">${l}</div>`).join('') + '</div>';
-  // 週列
-  weeks.forEach(week => {
-    body += '<div class="heatmap-week">';
-    week.forEach(ds => {
-      const isToday  = ds === t;
-      const isFuture = ds > t;
-      if (isFuture) { body += '<div class="hm-cell future"></div>'; return; }
-      const d = map[ds];
-      let cls = '';
-      if (d) {
-        if (d.vol > 0 && d.hasC) cls = 'wc';
-        else if (d.vol > 0) cls = d.vol < q1 ? 'w1' : d.vol < q2 ? 'w2' : d.vol < q3 ? 'w3' : 'w4';
-        else if (d.hasC) cls = 'c1';
-      }
-      body += `<div class="hm-cell ${cls}${isToday?' today-cell':''}"></div>`;
-    });
-    body += '</div>';
-  });
-  body += '</div>';
-
-  el.innerHTML = monthRow + body;
-
-  // 最新週が見えるよう右端にスクロール
-  const outer = el.closest('.heatmap-outer');
-  if (outer) requestAnimationFrame(() => { outer.scrollLeft = outer.scrollWidth; });
 }
 
 /* ─────────────────────────────────────────
