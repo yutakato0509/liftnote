@@ -1470,7 +1470,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <button class="tab-btn active" onclick="gTab('bw',this)">体重推移</button>
     <button class="tab-btn" onclick="gTab('ex',this)">種目推移</button>
     <button class="tab-btn" onclick="gTab('cardio',this)">有酸素</button>
-    <button class="tab-btn" onclick="gTab('volume',this)">ボリューム</button>
   </div>
 
   <div id="g-bw">
@@ -1530,20 +1529,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     </div>
   </div>
 
-  <div id="g-volume" style="display:none;">
-    <div class="card">
-      <div class="card-label" style="color:var(--accent);">Weekly Volume</div>
-      <div class="glow-line"></div>
-      <div class="chart-wrap" id="volume-chart-wrap" style="height:260px;">
-        <canvas id="volume-chart"></canvas>
-      </div>
-    </div>
-    <div class="card" style="margin-top:0;">
-      <div class="card-label" style="color:var(--accent);">種目別 ボリューム（今週）</div>
-      <div class="glow-line"></div>
-      <div id="volume-ex-breakdown"></div>
-    </div>
-  </div>
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -2341,11 +2326,9 @@ function gTab(tab, el) {
   document.getElementById('g-bw').style.display     = tab==='bw'     ? 'block' : 'none';
   document.getElementById('g-ex').style.display     = tab==='ex'     ? 'block' : 'none';
   document.getElementById('g-cardio').style.display = tab==='cardio' ? 'block' : 'none';
-  document.getElementById('g-volume').style.display = tab==='volume' ? 'block' : 'none';
   if (tab==='bw')     setTimeout(drawBwChart, 60);
   if (tab==='ex')     fillExSel();
   if (tab==='cardio') setTimeout(drawCardioChart, 60);
-  if (tab==='volume') setTimeout(drawVolumeChart, 60);
 }
 
 function resetChartWrap(wrapId, canvasId) {
@@ -2602,10 +2585,6 @@ function _renderMonthlyReport() {
   const bRecs = load(K.b).filter(r=>r.date.startsWith(prefix)).sort((a,b)=>a.date.localeCompare(b.date));
   const wDays = new Set(wRecs.map(r=>r.date)).size;
   const cDays = new Set(cRecs.map(r=>r.date)).size;
-  const vol   = wRecs.reduce((a,r) => {
-    if (r.setData) return a + r.setData.reduce((b,s)=>b+(s.weight||0)*(s.reps||0),0);
-    return a + (r.weight||0)*(r.reps||0)*(r.sets||1);
-  }, 0);
   const bwChange = bRecs.length >= 2 ? (bRecs[bRecs.length-1].weight - bRecs[0].weight) : null;
   const bwSign = bwChange === null ? '–' : (bwChange > 0 ? '▲' : bwChange < 0 ? '▼' : '±');
   const bwColor = bwChange === null ? 'var(--sub)' : bwChange > 0 ? 'var(--red)' : 'var(--green)';
@@ -2613,7 +2592,6 @@ function _renderMonthlyReport() {
     <div class="monthly-grid">
       <div class="monthly-item"><div class="monthly-num">${wDays}</div><div class="monthly-label">💪 ウエイト日数</div></div>
       <div class="monthly-item"><div class="monthly-num green">${cDays}</div><div class="monthly-label">🏃 有酸素日数</div></div>
-      <div class="monthly-item"><div class="monthly-num amber">${vol>=1000?(vol/1000).toFixed(1)+'t':vol+'kg'}</div><div class="monthly-label">総ボリューム</div></div>
       <div class="monthly-item"><div class="monthly-num" style="color:${bwColor};">${bwChange===null?'–':bwSign+Math.abs(bwChange).toFixed(1)+'kg'}</div><div class="monthly-label">体重変化</div></div>
     </div>`;
 }
@@ -3411,11 +3389,7 @@ function getWeekStats() {
   const cRecs = load(K.c).filter(r => r.date >= monday);
   const wDays = new Set(wRecs.map(r => r.date)).size;
   const cDays = new Set(cRecs.map(r => r.date)).size;
-  const totalVol = wRecs.reduce((a, r) => {
-    if (r.setData) return a + r.setData.reduce((b,s) => b + (s.weight||0)*(s.reps||0), 0);
-    return a + (r.weight||0)*(r.reps||0)*(r.sets||0);
-  }, 0);
-  return { wDays, cDays, totalVol };
+  return { wDays, cDays };
 }
 
 function renderHome() {
@@ -3470,7 +3444,7 @@ function renderHome() {
   });
 
   // 今週サマリー
-  const { wDays, cDays, totalVol } = getWeekStats();
+  const { wDays, cDays } = getWeekStats();
   const dow = parseDate(today()).dow;
   const monday = daysAgo(dow === 0 ? 6 : dow - 1);
   const [wy, wm, wd] = monday.split('-').map(Number);
@@ -3495,10 +3469,6 @@ function renderHome() {
     <div class="home-week-item">
       <div class="home-week-num">${cDays}</div>
       <div class="home-week-label">🏃 有酸素</div>
-    </div>
-    <div class="home-week-item">
-      <div class="home-week-num" style="font-size:16px;">${totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'t' : totalVol+'kg'}</div>
-      <div class="home-week-label">総ボリューム</div>
     </div>
     <div class="week-dots-row" style="grid-column:1/-1;">${dotsHtml}</div>`;
 
@@ -3885,123 +3855,6 @@ function renderYearHeatmap() {
   // 最新週が見えるよう右端にスクロール
   const outer = el.closest('.heatmap-outer');
   if (outer) requestAnimationFrame(() => { outer.scrollLeft = outer.scrollWidth; });
-}
-
-/* ─────────────────────────────────────────
-   VOLUME CHART (週次ボリューム棒グラフ)
-───────────────────────────────────────── */
-let volumeChart = null;
-
-function drawVolumeChart() {
-  if (volumeChart) { volumeChart.destroy(); volumeChart = null; }
-
-  const all = load(K.w);
-  const wrapEl = document.getElementById('volume-chart-wrap');
-  if (!all.length) {
-    wrapEl.innerHTML = `<div class="chart-empty"><span class="ei">📊</span><p>WEIGHT RECORDS NEEDED</p></div>`;
-    _renderVolumeBreakdown([]);
-    return;
-  }
-
-  // 週別ボリューム集計（直近12週）
-  const weekVol = {};
-  all.forEach(r => {
-    const [ry, rm, rd] = r.date.split('-').map(Number);
-    const d   = new Date(Date.UTC(ry, rm-1, rd, 12));
-    const dow = d.getUTCDay();
-    const mon = new Date(d.getTime() - (dow === 0 ? 6 : dow-1) * 86400000);
-    const key = mon.toISOString().slice(0, 10);
-    const vol = r.setData
-      ? r.setData.reduce((a,s) => a+(s.weight||0)*(s.reps||0), 0)
-      : (r.weight||0)*(r.reps||0)*(r.sets||1);
-    weekVol[key] = (weekVol[key] || 0) + vol;
-  });
-
-  const weeks = Object.keys(weekVol).sort().slice(-12);
-  if (!weeks.length) return;
-
-  const canvas = resetChartWrap('volume-chart-wrap', 'volume-chart');
-  const data   = weeks.map(w => weekVol[w]);
-
-  volumeChart = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: weeks.map(w => { const [,m,d] = w.split('-'); return `${+m}/${+d}~`; }),
-      datasets: [{
-        data,
-        backgroundColor: ctx => {
-          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 240);
-          g.addColorStop(0, 'rgba(255,85,0,.85)');
-          g.addColorStop(1, 'rgba(255,45,85,.35)');
-          return g;
-        },
-        borderColor: 'rgba(255,85,0,.9)',
-        borderWidth: 1.5,
-        borderRadius: 6,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1c1c1c', borderColor: '#333', borderWidth: 1,
-          titleColor: '#efefef', bodyColor: '#efefef', padding: 10,
-          callbacks: { label: ctx => `  ${ctx.raw >= 1000 ? (ctx.raw/1000).toFixed(1)+'t' : ctx.raw+'kg'}` }
-        }
-      },
-      scales: {
-        y: {
-          grid: { color: 'rgba(255,255,255,.05)' },
-          ticks: { color: '#505050', font: { size: 11, weight: '700' }, callback: v => v >= 1000 ? (v/1000).toFixed(1)+'t' : v+'kg' },
-          border: { color: 'transparent' }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { color: '#505050', font: { size: 10, weight: '700' } },
-          border: { color: 'transparent' }
-        }
-      }
-    }
-  });
-
-  // 今週の種目別ボリューム内訳
-  const curWeekKey = weeks[weeks.length - 1];
-  _renderVolumeBreakdown(all.filter(r => {
-    const [ry,rm,rd] = r.date.split('-').map(Number);
-    const d   = new Date(Date.UTC(ry,rm-1,rd,12));
-    const dow = d.getUTCDay();
-    const mon = new Date(d.getTime()-(dow===0?6:dow-1)*86400000);
-    return mon.toISOString().slice(0,10) === curWeekKey;
-  }));
-}
-
-function _renderVolumeBreakdown(recs) {
-  const el = document.getElementById('volume-ex-breakdown');
-  if (!el) return;
-  if (!recs.length) { el.innerHTML = `<div style="color:var(--sub);font-size:12px;padding:8px 0;">今週のデータなし</div>`; return; }
-
-  const exVol = {};
-  recs.forEach(r => {
-    const vol = r.setData
-      ? r.setData.reduce((a,s) => a+(s.weight||0)*(s.reps||0), 0)
-      : (r.weight||0)*(r.reps||0)*(r.sets||1);
-    exVol[r.exercise] = (exVol[r.exercise] || 0) + vol;
-  });
-  const entries = Object.entries(exVol).sort((a,b) => b[1]-a[1]);
-  const maxV = entries[0][1] || 1;
-
-  el.innerHTML = entries.map(([ex, vol]) => `
-    <div style="margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
-        <span style="font-size:12px;font-weight:800;color:var(--text);">${esc(ex)}</span>
-        <span style="font-size:11px;font-weight:800;color:var(--accent);">${vol>=1000?(vol/1000).toFixed(1)+'t':vol+'kg'}</span>
-      </div>
-      <div class="goal-bar-bg">
-        <div class="goal-bar-fill orange" style="width:${Math.round(vol/maxV*100)}%;"></div>
-      </div>
-    </div>`).join('');
 }
 
 /* ─────────────────────────────────────────
