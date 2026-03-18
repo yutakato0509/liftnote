@@ -3,29 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>筋トレ記録 — テクノロジー×筋肉で習慣をハック</title>
-<meta name="description" content="無料・インストール不要のPWA筋トレ記録アプリ。ウエイト・有酸素・体重をスマートに管理。">
+<title>LiftNote — テクノロジー×筋肉で習慣をハック</title>
+<meta name="description" content="無料・インストール不要のPWA筋トレ記録アプリ LiftNote。ウエイト・有酸素・体重をスマートに管理。">
 
 <!-- OGP -->
 <meta property="og:type"        content="website">
-<meta property="og:url"         content="https://fitness-tracker-henna-psi.vercel.app/">
-<meta property="og:title"       content="筋トレ記録 — テクノロジー×筋肉で習慣をハック">
-<meta property="og:description" content="無料・インストール不要のPWA筋トレ記録アプリ。ウエイト・有酸素・体重をスマートに管理。">
-<meta property="og:image"       content="https://fitness-tracker-henna-psi.vercel.app/og-image.svg">
+<meta property="og:url"         content="https://rococo-stardust-dc9db5.netlify.app/">
+<meta property="og:title"       content="LiftNote — テクノロジー×筋肉で習慣をハック">
+<meta property="og:description" content="無料・インストール不要のPWA筋トレ記録アプリ LiftNote。ウエイト・有酸素・体重をスマートに管理。">
+<meta property="og:image"       content="https://rococo-stardust-dc9db5.netlify.app/og-image.svg">
 <meta property="og:locale"      content="ja_JP">
-<meta property="og:site_name"   content="筋トレ記録">
+<meta property="og:site_name"   content="LiftNote">
 
 <!-- Twitter Card -->
 <meta name="twitter:card"        content="summary_large_image">
-<meta name="twitter:title"       content="筋トレ記録 — テクノロジー×筋肉で習慣をハック">
-<meta name="twitter:description" content="無料・インストール不要のPWA筋トレ記録アプリ。ウエイト・有酸素・体重をスマートに管理。">
-<meta name="twitter:image"       content="https://fitness-tracker-henna-psi.vercel.app/og-image.svg">
+<meta name="twitter:title"       content="LiftNote — テクノロジー×筋肉で習慣をハック">
+<meta name="twitter:description" content="無料・インストール不要のPWA筋トレ記録アプリ LiftNote。ウエイト・有酸素・体重をスマートに管理。">
+<meta name="twitter:image"       content="https://rococo-stardust-dc9db5.netlify.app/og-image.svg">
 
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <meta name="theme-color" content="#ff5500">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="筋トレ記録">
+<meta name="apple-mobile-web-app-title" content="LiftNote">
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js').catch(() => {});
@@ -1170,7 +1171,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 <header class="header">
   <div class="header-title">
     <span class="fire">🔥</span>
-    <span>筋<strong>トレ</strong>記録</span>
+    <span>Lift<strong>Note</strong></span>
   </div>
   <div class="header-date">
     <div class="day" id="hdr-day"></div>
@@ -1184,7 +1185,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 <div class="share-sheet-overlay" id="share-sheet-overlay" onclick="closeShareSheet(event)">
   <div class="share-sheet">
     <div class="share-sheet-title">友達にシェア</div>
-    <div class="share-sheet-url">https://fitness-tracker-henna-psi.vercel.app/</div>
+    <div class="share-sheet-url">https://rococo-stardust-dc9db5.netlify.app/</div>
     <div class="share-btns">
       <button class="share-btn-item" onclick="shareAction('copy')">
         <span class="share-icon">📋</span>
@@ -2843,8 +2844,8 @@ function tagBadgesHTML(tags) {
 /* ─────────────────────────────────────────
    SHARE
 ───────────────────────────────────────── */
-const SHARE_URL  = 'https://fitness-tracker-henna-psi.vercel.app/';
-const SHARE_TEXT = '🔥 筋トレ記録アプリ — テクノロジー×筋肉で習慣をハックする。無料・インストール不要！';
+const SHARE_URL  = 'https://rococo-stardust-dc9db5.netlify.app/';
+const SHARE_TEXT = '🔥 LiftNote — テクノロジー×筋肉で習慣をハックする筋トレ記録アプリ。無料・インストール不要！';
 
 function openShareSheet() {
   document.getElementById('share-sheet-overlay').classList.add('open');
@@ -2954,10 +2955,9 @@ function _timerBeep() {
    ONBOARDING
 ───────────────────────────────────────── */
 const OB_SLIDES = [
-  { icon:'🔥', title:'ようこそ！\n筋トレ記録へ',   text:'トレーニング・有酸素・体重を毎日記録して、成長を数字で実感しよう。' },
-  { icon:'💪', title:'セットごとに\n記録できる',    text:'重量・回数をセットごとに記録。自己ベスト（PR）を自動で検出します。' },
-  { icon:'📅', title:'カレンダーで\n習慣を確認',    text:'カレンダービューで「どの日に何をしたか」を一目で振り返れます。' },
-  { icon:'🏆', title:'今日から\n始めよう！',        text:'毎日記録してストリークを伸ばそう。継続が最強のトレーニングだ。' },
+  { icon:'🔥', title:'ようこそ\nLiftNoteへ',        text:'ウエイト・有酸素・体重を毎日記録。テクノロジーの力で筋トレ習慣をハックしよう。' },
+  { icon:'💪', title:'セット記録 &\n自己ベスト自動検出', text:'重量・回数をセットごとに細かく記録。自己ベスト（PR）更新を自動で検知して通知します。' },
+  { icon:'📅', title:'習慣を\n可視化しよう',         text:'カレンダーとグラフで成長を一目確認。ストリークを伸ばして習慣を強化しよう。' },
 ];
 let obSlide = 0;
 
