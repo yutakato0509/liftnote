@@ -1181,6 +1181,147 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 /* ═══════════ SET PREV HINT ═══════════ */
 .set-prev-hint { width:100%; padding-left:40px; font-size:9px; color:rgba(255,255,255,.22); font-weight:700; line-height:1; letter-spacing:.04em; min-height:10px; margin-bottom:4px; }
 
+/* ═══════════ PR CELEBRATION MODAL ═══════════ */
+.pr-modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.85);
+  backdrop-filter:blur(10px); z-index:900;
+  display:none; align-items:center; justify-content:center;
+  padding:24px;
+}
+.pr-modal-overlay.open { display:flex; }
+.pr-modal {
+  background:linear-gradient(160deg,#1a0a00,#0d0d0d);
+  border:1px solid rgba(255,85,0,.4); border-radius:28px;
+  padding:36px 28px 32px; max-width:340px; width:100%;
+  text-align:center; position:relative; overflow:hidden;
+  box-shadow:0 0 60px rgba(255,85,0,.2), 0 24px 60px rgba(0,0,0,.8);
+  animation:prModalIn .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes prModalIn {
+  from { transform:scale(.7) translateY(30px); opacity:0; }
+  to   { transform:scale(1) translateY(0); opacity:1; }
+}
+.pr-modal-badge {
+  font-size:64px; line-height:1; display:block;
+  animation:prBadgePop .5s .15s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes prBadgePop {
+  from { transform:scale(0) rotate(-20deg); opacity:0; }
+  to   { transform:scale(1) rotate(0); opacity:1; }
+}
+.pr-modal-label {
+  font-size:11px; font-weight:900; letter-spacing:.18em;
+  color:var(--accent); text-transform:uppercase; margin:16px 0 8px;
+}
+.pr-modal-exercise {
+  font-size:20px; font-weight:900; color:#fff; margin-bottom:12px;
+}
+.pr-modal-rm {
+  font-size:52px; font-weight:900; line-height:1;
+  background:linear-gradient(135deg,#ff5500,#ff2d55);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; font-variant-numeric:tabular-nums;
+}
+.pr-modal-rm-unit { font-size:22px; font-weight:700; color:var(--sub); margin-left:3px; }
+.pr-modal-diff {
+  font-size:16px; font-weight:800; color:var(--green);
+  margin:8px 0 20px;
+}
+.pr-modal-share {
+  width:100%; padding:14px; border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none; color:#fff; font-size:13px; font-weight:900;
+  cursor:pointer; font-family:inherit; -webkit-appearance:none;
+  box-shadow:0 6px 24px rgba(255,85,0,.4); letter-spacing:.06em;
+  transition:transform .12s; margin-bottom:10px;
+}
+.pr-modal-share:active { transform:scale(.96); }
+.pr-modal-close {
+  background:none; border:none; color:var(--sub); font-size:12px;
+  font-weight:800; cursor:pointer; font-family:inherit;
+  -webkit-appearance:none; letter-spacing:.06em; padding:4px;
+}
+/* 紙吹雪 */
+.confetti-piece {
+  position:absolute; width:8px; height:8px; border-radius:2px;
+  animation:confettiFall var(--dur,1.2s) var(--delay,0s) ease-in forwards;
+  top:-10px; left:var(--left,50%);
+}
+@keyframes confettiFall {
+  0%   { transform:translateY(0) rotate(0deg) scale(1); opacity:1; }
+  80%  { opacity:1; }
+  100% { transform:translateY(420px) rotate(720deg) scale(.6); opacity:0; }
+}
+
+/* ═══════════ EMPTY STATE ═══════════ */
+.empty-state-cta {
+  display:flex; flex-direction:column; align-items:center;
+  text-align:center; padding:16px 8px;
+}
+.empty-state-icon { font-size:36px; margin-bottom:10px; line-height:1; }
+.empty-state-title { font-size:14px; font-weight:800; color:var(--text); margin-bottom:6px; }
+.empty-state-sub { font-size:12px; color:var(--sub); line-height:1.5; margin-bottom:16px; }
+.empty-state-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:11px 22px; border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none; color:#fff; font-size:12px; font-weight:900;
+  cursor:pointer; font-family:inherit; -webkit-appearance:none;
+  box-shadow:0 4px 16px rgba(255,85,0,.35); letter-spacing:.06em;
+  transition:transform .12s;
+}
+.empty-state-btn:active { transform:scale(.95); }
+
+/* ═══════════ MUSCLE FREQ (This Week 強化) ═══════════ */
+.muscle-freq-row {
+  display:flex; flex-wrap:wrap; gap:6px;
+  margin-top:14px; padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.muscle-freq-chip {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:4px 10px; border-radius:20px;
+  font-size:10px; font-weight:900; letter-spacing:.04em;
+  background:rgba(255,85,0,.12); border:1px solid rgba(255,85,0,.25);
+  color:var(--accent);
+}
+.muscle-freq-chip.zero {
+  background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.08);
+  color:rgba(255,255,255,.25);
+}
+.muscle-freq-chip.warn {
+  background:rgba(255,149,0,.12); border-color:rgba(255,149,0,.3);
+  color:var(--amber);
+}
+
+/* ═══════════ LOGIN PROMPT BANNER ═══════════ */
+.login-prompt-banner {
+  display:none; align-items:center; gap:12px;
+  background:linear-gradient(135deg,rgba(88,86,214,.15),rgba(90,200,250,.08));
+  border:1px solid rgba(88,86,214,.3); border-radius:16px;
+  padding:14px 16px; margin:0 14px 10px;
+}
+.login-prompt-banner.show { display:flex; }
+.login-prompt-icon { font-size:26px; flex-shrink:0; }
+.login-prompt-body { flex:1; min-width:0; }
+.login-prompt-title { font-size:13px; font-weight:800; color:#fff; }
+.login-prompt-sub   { font-size:11px; color:rgba(88,86,214,.9); font-weight:700; margin-top:2px; }
+.login-prompt-btn {
+  padding:8px 14px; border-radius:20px; flex-shrink:0;
+  background:linear-gradient(135deg,#5856d6,#5ac8fa);
+  border:none; color:#fff; font-size:11px; font-weight:900;
+  cursor:pointer; font-family:inherit; -webkit-appearance:none;
+  white-space:nowrap; letter-spacing:.04em; transition:transform .12s;
+}
+.login-prompt-btn:active { transform:scale(.94); }
+.login-prompt-close {
+  width:26px; height:26px; border-radius:50%;
+  background:rgba(255,255,255,.07); border:none;
+  color:var(--sub); font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; font-family:inherit; -webkit-appearance:none;
+}
+
 /* ═══════════ HABIT SCORE ═══════════ */
 .hs-wrap { display:flex; align-items:center; gap:16px; margin-bottom:16px; }
 .hs-score-circle { width:72px; height:72px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; border:3px solid var(--accent); background:rgba(255,85,0,.08); }
@@ -1195,6 +1336,64 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .hs-bar-bg { flex:1; height:6px; border-radius:4px; background:rgba(255,255,255,.07); overflow:hidden; }
 .hs-bar-fill { height:100%; border-radius:4px; background:var(--accent); transition:width .6s cubic-bezier(.4,0,.2,1); }
 .hs-bar-pts { font-size:10px; font-weight:900; color:var(--text); width:36px; text-align:right; flex-shrink:0; font-variant-numeric:tabular-nums; }
+
+/* ═══════════ BADGE SYSTEM ═══════════ */
+.badge-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.badge-item {
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  padding:12px 5px; border-radius:16px; text-align:center;
+  background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.05);
+  transition:all .2s;
+}
+.badge-item.earned {
+  background:rgba(255,85,0,.09); border-color:rgba(255,85,0,.35);
+  box-shadow:0 0 14px rgba(255,85,0,.14);
+}
+.badge-item:not(.earned) { opacity:.35; filter:grayscale(.7); }
+.badge-icon { font-size:26px; line-height:1; }
+.badge-name { font-size:9px; font-weight:900; color:var(--sub); letter-spacing:.03em; line-height:1.3; }
+.badge-item.earned .badge-name { color:var(--text); }
+.badge-earned-date { font-size:8px; color:rgba(255,85,0,.7); font-weight:800; }
+.badge-toast-share {
+  display:inline-flex; align-items:center; gap:4px;
+  background:rgba(255,255,255,.18); color:#fff;
+  border:none; border-radius:6px; padding:4px 11px;
+  font-size:11px; font-weight:800; cursor:pointer; margin-left:8px;
+  font-family:inherit; -webkit-appearance:none;
+  vertical-align:middle; transition:background .15s;
+}
+.badge-toast-share:active { background:rgba(255,255,255,.28); }
+
+/* ═══════════ MISSION 7-DAY DOTS ═══════════ */
+.mission-7d-row { display:flex; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,.06); }
+.mission-7d-item { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.mission-7d-dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.08); }
+.mission-7d-dot.has-w { background:var(--accent); border:none; box-shadow:0 0 7px rgba(255,85,0,.6); }
+.mission-7d-dot.has-c { background:var(--green); border:none; box-shadow:0 0 7px rgba(0,212,106,.6); }
+.mission-7d-dot.has-wc { background:linear-gradient(135deg,var(--accent),var(--green)); border:none; box-shadow:0 0 7px rgba(255,85,0,.4); }
+.mission-7d-dot.is-today { outline:2px solid rgba(255,85,0,.55); outline-offset:3px; border-radius:50%; }
+.mission-7d-label { font-size:9px; font-weight:900; color:var(--sub); }
+
+/* ═══════════ MISSION DONE STATE ═══════════ */
+.mission-done-row { display:flex; align-items:center; gap:12px; padding:4px 0; }
+.mission-done-icon { font-size:30px; flex-shrink:0; }
+.mission-done-title { font-size:14px; font-weight:900; color:var(--green); letter-spacing:-.2px; }
+.mission-done-exs { font-size:11px; color:var(--sub); margin-top:3px; line-height:1.5; }
+.mission-streak-chip {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(255,85,0,.12); border:1px solid rgba(255,85,0,.3);
+  border-radius:20px; padding:5px 12px; font-size:11px; font-weight:800;
+  color:var(--accent); margin-top:10px;
+}
+
+/* ═══════════ GOAL CHART ACHIEVEMENT ═══════════ */
+.bw-goal-banner {
+  display:flex; align-items:center; justify-content:space-between;
+  background:rgba(255,149,0,.08); border:1px solid rgba(255,149,0,.25);
+  border-radius:10px; padding:8px 14px; margin-bottom:10px;
+}
+.bw-goal-label { font-size:10px; font-weight:900; color:var(--amber); letter-spacing:.06em; text-transform:uppercase; }
+.bw-goal-pct { font-size:18px; font-weight:900; color:var(--amber); font-variant-numeric:tabular-nums; }
 </style>
 </head>
 <body>
@@ -1212,6 +1411,30 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 </header>
 
 <div class="toast" id="toast"></div>
+
+<!-- PR Celebration Modal -->
+<div class="pr-modal-overlay" id="pr-modal-overlay" onclick="closePrModal(event)">
+  <div class="pr-modal" id="pr-modal">
+    <span class="pr-modal-badge">🏆</span>
+    <div class="pr-modal-label">NEW PERSONAL RECORD</div>
+    <div class="pr-modal-exercise" id="pr-modal-exercise"></div>
+    <div class="pr-modal-rm" id="pr-modal-rm"><span id="pr-modal-rm-num"></span><span class="pr-modal-rm-unit">kg</span></div>
+    <div class="pr-modal-diff" id="pr-modal-diff"></div>
+    <button class="pr-modal-share" onclick="sharePrModal()">🔥 Xでシェアする</button>
+    <button class="pr-modal-close" onclick="closePrModal()">後で</button>
+  </div>
+</div>
+
+<!-- ログイン促進バナー -->
+<div class="login-prompt-banner" id="login-prompt-banner">
+  <span class="login-prompt-icon">☁️</span>
+  <div class="login-prompt-body">
+    <div class="login-prompt-title">データをバックアップしよう</div>
+    <div class="login-prompt-sub">Googleログインで機種変更しても消えない</div>
+  </div>
+  <button class="login-prompt-btn" onclick="signInWithGoogle();closeLoginPrompt()">ログイン</button>
+  <button class="login-prompt-close" onclick="closeLoginPrompt()" aria-label="閉じる">✕</button>
+</div>
 
 <!-- PWAインストール促進バナー -->
 <div class="pwa-banner" id="pwa-banner">
@@ -1305,6 +1528,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     </div>
     <div class="glow-line"></div>
     <div id="home-goals"></div>
+  </div>
+
+  <!-- Badges -->
+  <div class="card" id="home-badges-card">
+    <div class="card-label">🏅 Badges</div>
+    <div class="glow-line"></div>
+    <div id="home-badges"></div>
   </div>
 
   <!-- App Utilities -->
@@ -1508,6 +1738,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div class="card">
       <div class="card-label" style="color:var(--amber);">Body Weight Trend</div>
       <div class="glow-line" style="background: linear-gradient(90deg, transparent, rgba(255,149,0,.2) 50%, transparent);"></div>
+      <div id="bw-goal-banner" class="bw-goal-banner" style="display:none;"></div>
       <div class="period-group">
         <button class="period-btn" onclick="setPeriodBw('1m',this)">1ヶ月</button>
         <button class="period-btn" onclick="setPeriodBw('3m',this)">3ヶ月</button>
@@ -1808,6 +2039,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initFirebase();
   checkOnboarding();
   checkPwaBanner();
+  setTimeout(checkLoginPrompt, 2000);
 });
 
 /* ─────────────────────────────────────────
@@ -2016,6 +2248,8 @@ function saveWeight() {
   renderWRecent();
   renderHome();
   renderTodayWorkout();
+  // バッジチェック（新規記録のみ）
+  if (!editingId.w) setTimeout(() => checkBadges(), 600);
   // 次の種目をすぐ入力できるようフォーカス
   setTimeout(() => { const ex = document.getElementById('w-exercise'); if (ex) ex.focus(); }, 80);
   // Layer 2: 前回記録との比較シートを表示（少し遅延させてトーストと重複させない）
@@ -2132,6 +2366,7 @@ function saveCardio() {
   resetCForm();
   renderCRecent();
   renderHome();
+  if (!editingId.c) setTimeout(() => checkBadges(), 600);
 }
 
 function renderCRecent() {
@@ -2207,6 +2442,7 @@ function saveBody() {
   resetBForm();
   renderBRecent();
   renderHome();
+  if (!editingId.b) setTimeout(() => checkBadges(), 600);
 }
 
 function renderBRecent() {
@@ -2454,6 +2690,32 @@ function drawBwChart() {
     return;
   }
 
+  // 目標体重バナー
+  const goals = loadGoals();
+  const bwGoalBanner = document.getElementById('bw-goal-banner');
+  if (goals.targetWeight && recs.length >= 2) {
+    const startW = all[0].weight;
+    const curW   = recs[recs.length - 1].weight;
+    const isLoss = goals.targetWeight < startW;
+    const done   = isLoss ? curW <= goals.targetWeight : curW >= goals.targetWeight;
+    let pct;
+    if (done) {
+      pct = 100;
+    } else {
+      const totalDiff = Math.abs(goals.targetWeight - startW);
+      const doneDiff  = Math.abs(curW - startW);
+      pct = totalDiff > 0 ? Math.min(99, Math.round(doneDiff / totalDiff * 100)) : 0;
+    }
+    if (bwGoalBanner) {
+      bwGoalBanner.style.display = 'flex';
+      bwGoalBanner.innerHTML = `
+        <span class="bw-goal-label">🎯 目標体重 ${goals.targetWeight}kg</span>
+        <span class="bw-goal-pct">${pct}%</span>`;
+    }
+  } else if (bwGoalBanner) {
+    bwGoalBanner.style.display = 'none';
+  }
+
   const hasFat = recs.some(r => r.fatPct != null);
   const datasets = [{
     label: '体重(kg)',
@@ -2482,6 +2744,17 @@ function drawBwChart() {
       fill: true, tension: 0.4, borderDash: [5, 3], spanGaps: true,
       pointBackgroundColor: '#ff2d55', pointBorderColor: '#080808', pointBorderWidth: 2,
       pointRadius: 4, pointHoverRadius: 7, borderWidth: 2, yAxisID: 'y2',
+    });
+  }
+
+  // 目標体重ライン
+  if (goals.targetWeight) {
+    datasets.push({
+      label: `目標 ${goals.targetWeight}kg`,
+      data: recs.map(() => goals.targetWeight),
+      borderColor: 'rgba(255,149,0,.7)',
+      borderDash: [8, 4], borderWidth: 1.5,
+      pointRadius: 0, fill: false, tension: 0, yAxisID: 'y',
     });
   }
 
@@ -2687,7 +2960,14 @@ function renderGoals() {
   const el    = document.getElementById('home-goals');
   const card = document.getElementById('home-goals-card');
   if (!g.targetWeight && !g.weeklyW && !g.weeklyC) {
-    card.style.display = 'none';
+    card.style.display = 'block';
+    el.innerHTML = `
+      <div class="empty-state-cta">
+        <div class="empty-state-icon">🎯</div>
+        <div class="empty-state-title">目標を設定しよう</div>
+        <div class="empty-state-sub">目標体重・週の頻度を設定すると<br>達成度がグラフで確認できます</div>
+        <button class="empty-state-btn" onclick="openGoalModal()">目標を設定する</button>
+      </div>`;
     return;
   }
   card.style.display = 'block';
@@ -2923,6 +3203,87 @@ function shareAction(type) {
   }
 }
 
+/* ─────────────────────────────────────────
+   PR CELEBRATION MODAL
+───────────────────────────────────────── */
+let _prModalData = null;
+
+function showPrModal(exercise, newRM, diffRM) {
+  _prModalData = { exercise, newRM, diffRM };
+  document.getElementById('pr-modal-exercise').textContent = exercise;
+  document.getElementById('pr-modal-rm-num').textContent = newRM;
+  document.getElementById('pr-modal-diff').textContent = diffRM > 0 ? `前回比 +${diffRM}kg 📈` : '初めての記録！🎉';
+  // 紙吹雪生成
+  const modal = document.getElementById('pr-modal');
+  const colors = ['#ff5500','#ff2d55','#ff9500','#00d46a','#5ac8fa','#fff'];
+  for (let i = 0; i < 22; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      --dur:${0.9+Math.random()*0.8}s;
+      --delay:${Math.random()*0.4}s;
+      transform:rotate(${Math.random()*360}deg);
+      border-radius:${Math.random()>.5?'50%':'2px'};
+    `;
+    modal.appendChild(piece);
+    setTimeout(() => piece.remove(), 2000);
+  }
+  document.getElementById('pr-modal-overlay').classList.add('open');
+  // サウンド
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[880,.0],[1046,.12],[1318,.24],[1760,.38]].forEach(([f,t]) => {
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value=f; o.type='sine';
+      g.gain.setValueAtTime(.35,ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+.25);
+      o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+.25);
+    });
+  } catch(e) {}
+}
+
+function closePrModal(e) {
+  if (e && e.currentTarget !== e.target) return;
+  document.getElementById('pr-modal-overlay').classList.remove('open');
+}
+
+function sharePrModal() {
+  if (!_prModalData) return;
+  const { exercise, newRM, diffRM } = _prModalData;
+  const text = `🏆 NEW PR！\n${exercise} 推定1RM ${newRM}kg${diffRM>0?` (+${diffRM}kg)`:''}🔥\n\nLiftNoteで記録中 #LiftNote #筋トレ #${exercise.replace(/\s/g,'')}`;
+  if (navigator.share) {
+    navigator.share({ title:'LiftNote PR更新！', text, url:'https://liftnote-app.netlify.app' }).catch(()=>{});
+  } else {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://liftnote-app.netlify.app')}`, '_blank');
+  }
+  closePrModal();
+}
+
+/* ─────────────────────────────────────────
+   LOGIN PROMPT BANNER
+───────────────────────────────────────── */
+function checkLoginPrompt() {
+  // ログイン済み or 閉じ済み or Firebase未初期化なら非表示
+  if (localStorage.getItem('ln_login_prompted')) return;
+  if (typeof firebase === 'undefined') return;
+  try {
+    const user = firebase.auth().currentUser;
+    if (user) return;
+  } catch(e) { return; }
+  const totalRecs = load(K.w).length + load(K.c).length + load(K.b).length;
+  if (totalRecs >= 5) {
+    document.getElementById('login-prompt-banner').classList.add('show');
+  }
+}
+
+function closeLoginPrompt() {
+  localStorage.setItem('ln_login_prompted', '1');
+  document.getElementById('login-prompt-banner').classList.remove('show');
+}
+
 /* 友達に紹介（Web Share API） */
 function shareInvite() {
   const text = '筋トレ記録アプリ LiftNote を使ってみて！';
@@ -3073,9 +3434,10 @@ function _timerBeep() {
    ONBOARDING
 ───────────────────────────────────────── */
 const OB_SLIDES = [
-  { icon:'🔥', title:'ようこそ\nLiftNoteへ',        text:'ウエイト・有酸素・体重を毎日記録。テクノロジーの力で筋トレ習慣をハックしよう。' },
-  { icon:'💪', title:'セット記録 &\n自己ベスト自動検出', text:'重量・回数をセットごとに細かく記録。自己ベスト（PR）更新を自動で検知して通知します。' },
-  { icon:'📅', title:'習慣を\n可視化しよう',         text:'カレンダーとグラフで成長を一目確認。ストリークを伸ばして習慣を強化しよう。' },
+  { icon:'🔥', title:'ようこそ\nLiftNoteへ',        text:'ウエイト・有酸素・体重を毎日記録。テクノロジーの力で筋トレ習慣をハックしよう。インストール不要・完全無料！' },
+  { icon:'💪', title:'セット記録 &\n自己ベスト自動検出', text:'重量・回数をセットごとに細かく記録。自己ベスト（PR）更新を自動で検知して派手にお祝いします🎊' },
+  { icon:'🧬', title:'Habit Score で\n習慣を数値化',  text:'4つの指標で習慣の質を100点満点でスコアリング。「続けている自分」をデータで実感しよう。' },
+  { icon:'📲', title:'ホーム画面に\n追加しよう',     text:'ホーム画面に追加するとアプリのように使えます。オフラインでも記録できる！', hasPwaBtn: true },
 ];
 let obSlide = 0;
 
@@ -3087,13 +3449,24 @@ function checkOnboarding() {
 }
 function _renderObSlide() {
   const s = OB_SLIDES[obSlide];
+  const isLast = obSlide === OB_SLIDES.length - 1;
   document.getElementById('ob-body').innerHTML = `
     <span class="ob-icon">${s.icon}</span>
     <div class="ob-title">${s.title}</div>
-    <div class="ob-text">${s.text}</div>`;
+    <div class="ob-text">${s.text}</div>
+    ${s.hasPwaBtn ? `
+      <button class="ob-pwa-btn" onclick="triggerPwaInstall();nextOnboarding();" style="
+        margin-top:16px;padding:13px 24px;border-radius:14px;
+        background:linear-gradient(135deg,var(--green),#00b359);
+        border:none;color:#000;font-size:13px;font-weight:900;
+        cursor:pointer;font-family:inherit;-webkit-appearance:none;
+        box-shadow:0 6px 20px rgba(0,212,106,.35);letter-spacing:.04em;
+        display:inline-flex;align-items:center;gap:6px;
+        transition:transform .12s;
+      ">📲 ホーム画面に追加</button>` : ''}`;
   document.getElementById('ob-dots').innerHTML = OB_SLIDES.map((_,i) =>
     `<div class="ob-dot${i===obSlide?' active':''}"></div>`).join('');
-  document.getElementById('ob-btn').textContent = obSlide < OB_SLIDES.length - 1 ? '次へ →' : '🔥 はじめる！';
+  document.getElementById('ob-btn').textContent = isLast ? '🔥 はじめる！' : '次へ →';
 }
 function nextOnboarding() {
   if (obSlide < OB_SLIDES.length - 1) {
@@ -3607,6 +3980,24 @@ function renderHome() {
       <div class="week-dot-label">${dotLabels[i]}</div>
     </div>`;
   }).join('');
+  // 部位別記録頻度（今週）
+  const tagData = JSON.parse(localStorage.getItem('ft_day_tags') || '{}');
+  const muscleGroups = [
+    { key:'胸', icon:'🫁' }, { key:'背中', icon:'🦅' }, { key:'脚', icon:'🦵' },
+    { key:'肩', icon:'💪' }, { key:'腕', icon:'💪' }, { key:'全身', icon:'⚡' }
+  ];
+  const muscleFreqHtml = (() => {
+    const weekTagDates = weekDays.filter(d => tagData[d]);
+    if (!weekTagDates.length) return '';
+    const freq = {};
+    weekTagDates.forEach(d => { (tagData[d] || []).forEach(tag => { freq[tag] = (freq[tag] || 0) + 1; }); });
+    const chips = muscleGroups
+      .filter(g => freq[g.key] > 0)
+      .map(g => `<span class="muscle-freq-chip">${g.icon} ${g.key} ×${freq[g.key]}</span>`)
+      .join('');
+    return chips ? `<div class="muscle-freq-row">${chips}</div>` : '';
+  })();
+
   document.getElementById('home-week').innerHTML = `
     <div class="home-week-item">
       <div class="home-week-num">${wDays}</div>
@@ -3616,7 +4007,8 @@ function renderHome() {
       <div class="home-week-num">${cDays}</div>
       <div class="home-week-label">🏃 有酸素</div>
     </div>
-    <div class="week-dots-row" style="grid-column:1/-1;">${dotsHtml}</div>`;
+    <div class="week-dots-row" style="grid-column:1/-1;">${dotsHtml}</div>
+    ${muscleFreqHtml ? `<div style="grid-column:1/-1;">${muscleFreqHtml}</div>` : ''}`;
 
   // リスタートバナー & 今日のミッション
   renderRestartBanner();
@@ -3627,6 +4019,9 @@ function renderHome() {
 
   // 目標
   renderGoals();
+
+  // バッジ
+  renderBadges();
 
 }
 
@@ -3905,6 +4300,18 @@ function calcHabitScore() {
 function renderHabitScore() {
   const el = document.getElementById('home-hs-content');
   if (!el) return;
+  // データが少ない場合はEmpty State
+  const totalRecs = load(K.w).length + load(K.c).length;
+  if (totalRecs < 3) {
+    el.innerHTML = `
+      <div class="empty-state-cta">
+        <div class="empty-state-icon">🧬</div>
+        <div class="empty-state-title">Habit Score を解除しよう</div>
+        <div class="empty-state-sub">3回以上記録するとあなたの習慣スコアが計算されます</div>
+        <button class="empty-state-btn" onclick="nav('record', document.querySelectorAll('.nav-item')[1])">💪 記録する</button>
+      </div>`;
+    return;
+  }
   const { total, consistencyPts, streakPts, recoveryPts, trendPts } = calcHabitScore();
   const levels = [
     [95, '👑 Identity',    'あなたは今、筋トレそのものだ'],
@@ -3975,22 +4382,46 @@ function renderRestartBanner() {
 ───────────────────────────────────────── */
 function renderTodayMission() {
   const el = document.getElementById('home-today-rec');
-  const card = document.getElementById('home-mission-card');
   if (!el) return;
   const t = today();
+  const wDates = new Set(load(K.w).map(r => r.date));
+  const cDates = new Set(load(K.c).map(r => r.date));
   const todayWRecs = load(K.w).filter(r => r.date === t);
+
+  // 直近7日ドット
+  const last7 = Array.from({length:7}, (_,i) => {
+    const d = new Date(Date.UTC(...t.split('-').map((v,j)=>j===1?+v-1:+v), 12));
+    d.setUTCDate(d.getUTCDate() - (6 - i));
+    return d.toISOString().slice(0,10);
+  });
+  const dow7Labels = last7.map(d => {
+    const w = new Date(d+'T12:00:00Z').getUTCDay();
+    return ['日','月','火','水','木','金','土'][w];
+  });
+  const dots7 = last7.map((d, i) => {
+    const hasW = wDates.has(d), hasC = cDates.has(d), isTd = d === t;
+    const cls = hasW && hasC ? 'has-wc' : hasW ? 'has-w' : hasC ? 'has-c' : '';
+    return `<div class="mission-7d-item">
+      <div class="mission-7d-dot ${cls}${isTd?' is-today':''}"></div>
+      <div class="mission-7d-label">${dow7Labels[i]}</div>
+    </div>`;
+  }).join('');
+  const dots7Html = `<div class="mission-7d-row">${dots7}</div>`;
 
   // 今日トレ済みならチェックを表示
   if (todayWRecs.length > 0) {
     const exNames = [...new Set(todayWRecs.map(r => r.exercise))];
+    const streak = calcStreak(load(K.w));
     el.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;padding:4px 0;">
-        <span style="font-size:26px;">✅</span>
+      <div class="mission-done-row">
+        <span class="mission-done-icon">✅</span>
         <div>
-          <div style="font-size:13px;font-weight:800;color:var(--green);">今日のトレーニング済み！</div>
-          <div style="font-size:11px;color:var(--sub);margin-top:3px;">${exNames.slice(0,4).map(e => esc(e)).join(' · ')}</div>
+          <div class="mission-done-title">今日のミッション完了！</div>
+          <div class="mission-done-exs">${exNames.slice(0,4).map(e => esc(e)).join('　·　')}</div>
         </div>
-      </div>`;
+      </div>
+      ${streak > 0 ? `<div class="mission-streak-chip">🔥 ${streak}週連続継続中</div>` : ''}
+      ${dots7Html}`;
     return;
   }
 
@@ -4020,7 +4451,8 @@ function renderTodayMission() {
           <span class="today-rec-chip-days">${days !== null ? days+'日前' : '未記録'}</span>
         </button>`;
       }).join('')}
-    </div>`;
+    </div>
+    ${dots7Html}`;
 }
 
 function goToRecordWithTag(tag) {
@@ -4209,6 +4641,143 @@ function closeHistSheet(e) {
 /* ─────────────────────────────────────────
    TODAY'S WORKOUT SUMMARY
 ───────────────────────────────────────── */
+/* ─────────────────────────────────────────
+   BADGE SYSTEM
+───────────────────────────────────────── */
+const BADGES = {
+  FIRST_RECORD: { icon:'🌱', name:'初めての一歩', desc:'初回トレーニング記録', shareText:'LiftNoteで初めてのトレーニングを記録しました！ #LiftNote #筋トレ' },
+  RECS_10:      { icon:'⚡', name:'10回達成',     desc:'トレーニング10回記録', shareText:'LiftNoteでトレーニング10回達成！継続中です 💪 #LiftNote #筋トレ' },
+  RECS_50:      { icon:'🔥', name:'50回達成',     desc:'トレーニング50回記録', shareText:'LiftNoteでトレーニング50回達成！本物の習慣になってきた 🔥 #LiftNote' },
+  STREAK_7:     { icon:'💫', name:'7週連続',      desc:'7週間トレーニング継続', shareText:'LiftNoteで7週連続トレーニング継続中！ #LiftNote #習慣化' },
+  STREAK_12:    { icon:'💎', name:'3ヶ月継続',    desc:'12週間トレーニング継続', shareText:'LiftNoteで3ヶ月トレーニング継続しました！ #LiftNote #筋トレ' },
+  PR_UPDATE:    { icon:'🏆', name:'自己ベスト',   desc:'種目の重量記録更新',    shareText:'LiftNoteで新しい自己ベストを更新しました！ #LiftNote #筋トレ #PR' },
+  GOAL_WEIGHT:  { icon:'🎯', name:'目標達成',     desc:'目標体重に到達',        shareText:'LiftNoteで目標体重を達成しました！ #LiftNote #ダイエット #筋トレ' },
+  BODY_10:      { icon:'⚖️', name:'体重10回記録', desc:'体重10回以上記録',      shareText:'LiftNoteで体重を10回記録！継続が力なり 💪 #LiftNote' },
+};
+
+function loadBadges() {
+  try { return JSON.parse(localStorage.getItem('ln_badges') || '{}'); } catch { return {}; }
+}
+function saveBadges(b) { localStorage.setItem('ln_badges', JSON.stringify(b)); }
+
+function awardBadge(id, meta) {
+  const badges = loadBadges();
+  if (badges[id]) return; // already earned
+  badges[id] = { earnedAt: Date.now(), meta: meta || {} };
+  saveBadges(badges);
+  const def = BADGES[id];
+  if (!def) return;
+  // Show special badge toast with share button
+  const el = document.getElementById('toast');
+  if (el) {
+    el.innerHTML = `${def.icon} <strong>${def.name}</strong> バッジ獲得！<button class="badge-toast-share" onclick="shareBadge('${id}')">Xでシェア</button>`;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.classList.remove('show'); el.textContent = ''; }, 4000);
+  }
+  renderBadges();
+}
+
+function shareBadge(id) {
+  const def = BADGES[id];
+  if (!def) return;
+  const text = encodeURIComponent(def.shareText + '\n\nhttps://liftnote-app.netlify.app');
+  window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+}
+
+function checkBadges() {
+  const wAll = load(K.w);
+  const bAll = load(K.b);
+  const wDays = [...new Set(wAll.map(r => r.date))].length;
+  const bDays = bAll.length;
+  const streak = calcStreak(wAll);
+  const badges = loadBadges();
+
+  if (wAll.length > 0 && !badges.FIRST_RECORD)  awardBadge('FIRST_RECORD');
+  if (wDays >= 10  && !badges.RECS_10)   awardBadge('RECS_10');
+  if (wDays >= 50  && !badges.RECS_50)   awardBadge('RECS_50');
+  if (streak >= 7  && !badges.STREAK_7)  awardBadge('STREAK_7');
+  if (streak >= 12 && !badges.STREAK_12) awardBadge('STREAK_12');
+  if (bDays >= 10  && !badges.BODY_10)   awardBadge('BODY_10');
+
+  // PR check — see if any exercise was updated today
+  const t = today();
+  const prMap = {};
+  [...wAll].sort((a,b) => a.date.localeCompare(b.date)).forEach(r => {
+    const sets = r.setData || [{ weight: r.weight||0, reps: r.reps||0 }];
+    const maxW = Math.max(...sets.map(s => s.weight||0));
+    if (maxW > (prMap[r.exercise] || 0)) prMap[r.exercise] = maxW;
+  });
+  const todayRecs = wAll.filter(r => r.date === t);
+  const hasPR = todayRecs.some(r => {
+    const sets = r.setData || [{ weight: r.weight||0, reps: r.reps||0 }];
+    const newMax = Math.max(...sets.map(s => s.weight||0));
+    const prevRecs = wAll.filter(rr => rr.exercise === r.exercise && rr.date < t);
+    if (!prevRecs.length) return false;
+    const prevMax = Math.max(...prevRecs.flatMap(rr => (rr.setData||[{weight:rr.weight||0}]).map(s=>s.weight||0)));
+    return newMax > prevMax;
+  });
+  if (hasPR) {
+    // Reset PR badge daily so it can be re-earned
+    const prKey = `ln_pr_badge_${t}`;
+    if (!localStorage.getItem(prKey)) {
+      localStorage.setItem(prKey, '1');
+      awardBadge('PR_UPDATE');
+      // 種目ごとにPRモーダル表示
+      const prRec = todayRecs.find(r => {
+        const sets = r.setData || [{ weight: r.weight||0, reps: r.reps||0 }];
+        const newMax = Math.max(...sets.map(s => s.weight||0));
+        const prevRecs = wAll.filter(rr => rr.exercise === r.exercise && rr.date < t);
+        if (!prevRecs.length) return false;
+        const prevMax = Math.max(...prevRecs.flatMap(rr => (rr.setData||[{weight:rr.weight||0}]).map(s=>s.weight||0)));
+        return newMax > prevMax;
+      });
+      if (prRec) {
+        const sets = prRec.setData || [{ weight: prRec.weight||0, reps: prRec.reps||0 }];
+        const newMax = Math.max(...sets.map(s => s.weight||0));
+        const maxReps = sets.find(s=>s.weight===newMax)?.reps||1;
+        const newRM = calc1RM(newMax, maxReps);
+        const prevRecs = wAll.filter(rr => rr.exercise === prRec.exercise && rr.date < t);
+        const prevMax = prevRecs.length ? Math.max(...prevRecs.flatMap(rr => (rr.setData||[{weight:rr.weight||0}]).map(s=>s.weight||0))) : 0;
+        const prevRM = prevMax > 0 ? calc1RM(prevMax, 1) : 0;
+        setTimeout(() => showPrModal(prRec.exercise, newRM, newRM - prevRM), 800);
+      }
+    }
+  }
+
+  // Goal weight check
+  const g = loadGoals();
+  if (g.targetWeight && bAll.length) {
+    const curW = bAll.sort((a,b)=>b.date.localeCompare(a.date))[0].weight;
+    const startW = bAll.sort((a,b)=>a.date.localeCompare(b.date))[0].weight;
+    const achieved = g.targetWeight < startW ? curW <= g.targetWeight : curW >= g.targetWeight;
+    if (achieved && !badges.GOAL_WEIGHT) awardBadge('GOAL_WEIGHT');
+  }
+}
+
+function renderBadges() {
+  const el = document.getElementById('home-badges');
+  const card = document.getElementById('home-badges-card');
+  if (!el) return;
+  const badges = loadBadges();
+  const order = ['FIRST_RECORD','RECS_10','RECS_50','STREAK_7','STREAK_12','PR_UPDATE','GOAL_WEIGHT','BODY_10'];
+  const hasAny = order.some(id => badges[id]);
+
+  card.style.display = 'block';
+  el.innerHTML = `<div class="badge-grid">` +
+    order.map(id => {
+      const def = BADGES[id];
+      const earned = badges[id];
+      const dateStr = earned ? new Date(earned.earnedAt).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'}) : '';
+      return `<div class="badge-item${earned?' earned':''}">
+        <span class="badge-icon">${def.icon}</span>
+        <span class="badge-name">${def.name}</span>
+        ${earned ? `<span class="badge-earned-date">${dateStr}</span>` : ''}
+      </div>`;
+    }).join('') +
+  `</div>`;
+}
+
 function renderTodayWorkout() {
   const wrap = document.getElementById('today-workout-wrap');
   const list = document.getElementById('today-workout-list');
