@@ -572,13 +572,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 }
 .btn-edit:active { background: rgba(255,85,0,.2); }
 
-/* Volume badge */
-.vol-badge {
-  display: inline-block; font-size: 10px; font-weight: 800;
-  color: var(--sub); background: rgba(255,255,255,.04);
-  border: 1px solid var(--border); border-radius: 6px;
-  padding: 3px 7px; margin-top: 5px; letter-spacing: .04em;
-}
 
 /* Body fat */
 .fat-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
@@ -1127,7 +1120,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .hist-session:last-child { border-bottom:none; }
 .hist-session-date { font-size:11px; color:var(--sub); font-weight:700; margin-bottom:5px; }
 .hist-session-sets { font-size:13px; color:var(--text); font-weight:700; line-height:1.7; }
-.hist-session-vol  { font-size:10px; color:var(--accent); font-weight:800; margin-top:3px; }
 .hist-session-1rm  { font-size:10px; color:rgba(255,255,255,.4); font-weight:700; margin-top:2px; }
 .btn-hist {
   background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
@@ -1148,7 +1140,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .today-done-item:last-child { border-bottom:none; }
 .today-done-name   { font-size:13px; font-weight:800; color:var(--text); }
 .today-done-detail { font-size:11px; color:var(--sub); margin-top:2px; line-height:1.5; }
-.today-done-vol    { font-size:11px; color:var(--accent); font-weight:800; }
 
 /* ═══════════ DATE ACCORDION ═══════════ */
 .date-group { margin-bottom:8px; }
@@ -4744,12 +4735,8 @@ function showSaveComparison(exercise, newSets, prevRecord) {
   const prevSets = prevRecord.setData || [{ weight: prevRecord.weight||0, reps: prevRecord.reps||0 }];
   const newMaxW  = Math.max(...newSets.map(s => s.weight||0));
   const prevMaxW = Math.max(...prevSets.map(s => s.weight||0));
-  const newVol   = newSets.reduce((a,s) => a+(s.weight||0)*(s.reps||0), 0);
-  const prevVol  = prevSets.reduce((a,s) => a+(s.weight||0)*(s.reps||0), 0);
   const wDiff    = newMaxW - prevMaxW;
-  const vDiff    = newVol  - prevVol;
 
-  const fmtVol = v => v >= 1000 ? (v/1000).toFixed(1)+'t' : v+'kg';
   const fmtDiff = (d, unit) => d === 0 ? '' : `<span class="compare-kpi-delta">${d>0?'▲+':'▼'}${Math.abs(d)}${unit}</span>`;
 
   // セット比較テーブル
@@ -4772,10 +4759,6 @@ function showSaveComparison(exercise, newSets, prevRecord) {
       <div class="compare-kpi">
         <div class="compare-kpi-label">Max Weight</div>
         <div class="compare-kpi-val ${wDiff>0?'up':wDiff<0?'down':'same'}">${newMaxW}kg${fmtDiff(wDiff,'kg')}</div>
-      </div>
-      <div class="compare-kpi">
-        <div class="compare-kpi-label">Volume</div>
-        <div class="compare-kpi-val ${vDiff>0?'up':vDiff<0?'down':'same'}">${fmtVol(newVol)}${fmtDiff(vDiff,'kg')}</div>
       </div>
       <div class="compare-kpi">
         <div class="compare-kpi-label">推定1RM</div>
@@ -4857,7 +4840,6 @@ function showExHistorySheet(exercise) {
 
   // セッション一覧
   document.getElementById('hist-sheet-list').innerHTML = records.map(r => {
-    const vol = r.setData ? r.setData.reduce((a,s)=>a+(s.weight||0)*(s.reps||0),0) : (r.weight||0)*(r.reps||0)*(r.sets||1);
     const maxW = r.setData ? Math.max(...r.setData.map(s=>s.weight||0)) : (r.weight||0);
     const maxR = r.setData ? r.setData.find(s=>s.weight===maxW)?.reps||1 : (r.reps||1);
     const setsStr = r.setData
@@ -4867,10 +4849,7 @@ function showExHistorySheet(exercise) {
       <div class="hist-session">
         <div class="hist-session-date">${fmtDateFull(r.date)}</div>
         <div class="hist-session-sets">${setsStr}</div>
-        <div style="display:flex;gap:12px;margin-top:3px;">
-          ${vol ? `<div class="hist-session-vol">VOL ${vol>=1000?(vol/1000).toFixed(1)+'t':vol+'kg'}</div>` : ''}
-          ${maxW > 0 ? `<div class="hist-session-1rm">推定1RM ${calc1RM(maxW, maxR)}kg</div>` : ''}
-        </div>
+        ${maxW > 0 ? `<div class="hist-session-1rm" style="margin-top:3px;">推定1RM ${calc1RM(maxW, maxR)}kg</div>` : ''}
       </div>`;
   }).join('');
 
@@ -5032,9 +5011,6 @@ function renderTodayWorkout() {
   wrap.style.display = 'block';
 
   list.innerHTML = recs.map(r => {
-    const vol = r.setData
-      ? r.setData.reduce((a,s) => a+(s.weight||0)*(s.reps||0), 0)
-      : (r.weight||0)*(r.reps||0)*(r.sets||1);
     const setsStr = r.setData
       ? r.setData.map((s,i) => `${i+1}. ${s.weight>0?s.weight+'kg':'自重'}×${s.reps}`).join(' / ')
       : `${r.weight>0?r.weight+'kg':'自重'}×${r.reps}×${r.sets}set`;
@@ -5043,9 +5019,6 @@ function renderTodayWorkout() {
         <div>
           <div class="today-done-name">${esc(r.exercise)}</div>
           <div class="today-done-detail">${setsStr}</div>
-        </div>
-        <div class="today-done-right">
-          ${vol ? `<div class="today-done-vol">VOL ${vol>=1000?(vol/1000).toFixed(1)+'t':vol+'kg'}</div>` : ''}
         </div>
       </div>`;
   }).join('');
