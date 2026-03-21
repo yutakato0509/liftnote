@@ -607,12 +607,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 }
 #photo-modal.open { display: flex; }
 #photo-modal-img {
-  max-width: 100%; max-height: calc(100vh - 100px);
+  max-width: 100%; max-height: calc(100vh - 160px);
   object-fit: contain; border-radius: 10px;
+  user-select: none; -webkit-user-drag: none;
 }
 .photo-modal-date {
   color: var(--sub); font-size: 12px; font-weight: 700;
-  margin-top: 14px; letter-spacing: .06em;
+  margin-top: 12px; letter-spacing: .06em;
 }
 .photo-modal-close {
   position: absolute; top: env(safe-area-inset-top, 16px); right: 16px;
@@ -620,6 +621,38 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   color: #fff; font-size: 18px; width: 36px; height: 36px;
   border-radius: 50%; cursor: pointer; -webkit-appearance: none;
   display: flex; align-items: center; justify-content: center;
+}
+.photo-modal-counter {
+  position: absolute; top: env(safe-area-inset-top, 16px); left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,.45); font-size: 12px; font-weight: 700; letter-spacing: .06em;
+}
+.photo-nav-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: rgba(255,255,255,.1); border: none;
+  color: #fff; font-size: 28px; width: 48px; height: 64px;
+  border-radius: 12px; cursor: pointer; -webkit-appearance: none;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s; -webkit-tap-highlight-color: transparent;
+}
+.photo-nav-btn:active { background: rgba(255,255,255,.22); }
+#photo-nav-prev { left: 8px; }
+#photo-nav-next { right: 8px; }
+.photo-modal-actions {
+  display: flex; gap: 12px; margin-top: 16px;
+}
+.photo-modal-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.1); border: none;
+  color: #fff; font-size: 13px; font-weight: 800;
+  padding: 10px 20px; border-radius: 22px;
+  cursor: pointer; -webkit-appearance: none; font-family: inherit;
+  transition: background .15s;
+}
+.photo-modal-btn:active { background: rgba(255,255,255,.2); }
+.photo-modal-btn.danger { background: rgba(255,59,48,.2); color: rgba(255,100,90,1); }
+.photo-modal-btn.danger:active { background: rgba(255,59,48,.35); }
+.photo-btn-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;
 }
 
 /* ═══════════ UNDO TOAST ═══════════ */
@@ -1808,10 +1841,17 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
         <label>撮影日</label>
         <input type="date" id="photo-date">
       </div>
-      <button class="btn btn-primary" onclick="document.getElementById('photo-input').click()">
-        📷 写真を追加
-      </button>
-      <input type="file" id="photo-input" accept="image/*" style="display:none"
+      <div class="photo-btn-row">
+        <button class="btn" style="background:rgba(255,255,255,.07);color:var(--text);font-size:14px;" onclick="document.getElementById('photo-input-cam').click()">
+          📸 カメラ
+        </button>
+        <button class="btn btn-primary" style="font-size:14px;" onclick="document.getElementById('photo-input').click()">
+          🖼 アルバム
+        </button>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" multiple style="display:none"
+             onchange="onPhotoSelected(this)">
+      <input type="file" id="photo-input-cam" accept="image/*" capture="environment" style="display:none"
              onchange="onPhotoSelected(this)">
     </div>
     <div id="photo-grid"></div>
@@ -1933,9 +1973,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 
 <!-- PHOTO MODAL -->
 <div id="photo-modal" onclick="closePhotoModal(event)">
-  <button class="photo-modal-close" onclick="document.getElementById('photo-modal').classList.remove('open')">✕</button>
+  <button class="photo-modal-close" onclick="closePhotoModal()">✕</button>
+  <div class="photo-modal-counter" id="photo-modal-counter"></div>
+  <button id="photo-nav-prev" class="photo-nav-btn" onclick="photoModalNav(-1)">‹</button>
+  <button id="photo-nav-next" class="photo-nav-btn" onclick="photoModalNav(1)">›</button>
   <img id="photo-modal-img" src="" alt="">
   <div class="photo-modal-date" id="photo-modal-date"></div>
+  <div class="photo-modal-actions">
+    <button class="photo-modal-btn" onclick="downloadCurrentPhoto()">⬇ 保存</button>
+    <button class="photo-modal-btn danger" onclick="deleteCurrentPhoto()">🗑 削除</button>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -2185,6 +2232,15 @@ window.addEventListener('DOMContentLoaded', () => {
   checkOnboarding();
   checkPwaBanner();
   setTimeout(checkLoginPrompt, 2000);
+
+  // 写真モーダル スワイプジェスチャー
+  let _ptx = 0;
+  const pm = document.getElementById('photo-modal');
+  pm.addEventListener('touchstart', e => { _ptx = e.touches[0].clientX; }, { passive: true });
+  pm.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - _ptx;
+    if (Math.abs(dx) > 50) photoModalNav(dx < 0 ? 1 : -1);
+  }, { passive: true });
 });
 
 /* ─────────────────────────────────────────
@@ -3866,29 +3922,33 @@ async function syncLocalPhotos() {
 }
 
 async function onPhotoSelected(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const date    = document.getElementById('photo-date').value || today();
-  const dataUrl = await compressImage(file, 1200, 0.82);
-  const id      = uid();
-  const record  = { id, date, dataUrl, createdAt: Date.now() };
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  const date = document.getElementById('photo-date').value || today();
 
-  await dbAdd(record); // まずローカルに保存
+  if (files.length > 1) toast(`📷 ${files.length}枚を保存中...`);
 
-  if (fbStorage && fbAuth && fbAuth.currentUser) {
-    setSyncState('syncing');
-    try {
-      const ref = fbStorage.ref(`photos/${fbAuth.currentUser.uid}/${id}.jpg`);
-      await ref.putString(dataUrl, 'data_url');
-      const storageUrl = await ref.getDownloadURL();
-      await savePhotoMeta({ id, date, storageUrl, createdAt: record.createdAt });
-      setSyncState('ok');
-      setTimeout(() => setSyncState(''), 3000);
-    } catch (e) { setSyncState('err'); console.error('Photo upload error:', e); }
+  for (const file of files) {
+    const dataUrl = await compressImage(file, 1200, 0.82);
+    const id      = uid();
+    const record  = { id, date, dataUrl, createdAt: Date.now() };
+    await dbAdd(record);
+
+    if (fbStorage && fbAuth && fbAuth.currentUser) {
+      setSyncState('syncing');
+      try {
+        const ref = fbStorage.ref(`photos/${fbAuth.currentUser.uid}/${id}.jpg`);
+        await ref.putString(dataUrl, 'data_url');
+        const storageUrl = await ref.getDownloadURL();
+        await savePhotoMeta({ id, date, storageUrl, createdAt: record.createdAt });
+        setSyncState('ok');
+        setTimeout(() => setSyncState(''), 3000);
+      } catch (e) { setSyncState('err'); console.error('Photo upload error:', e); }
+    }
   }
 
   input.value = '';
-  toast('📷 写真を保存しました');
+  toast(files.length > 1 ? `📷 ${files.length}枚保存しました` : '📷 写真を保存しました');
   renderPhotoGrid();
 }
 
@@ -3930,12 +3990,51 @@ async function renderPhotoGrid() {
   `).join('');
 }
 
+let _photoModalList = [];
+let _photoModalIdx  = 0;
+
 function openPhotoModal(id) {
-  const p = photoCache[id];
+  _photoModalList = Object.values(photoCache)
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt||0) - (a.createdAt||0));
+  _photoModalIdx = _photoModalList.findIndex(p => p.id === id);
+  if (_photoModalIdx < 0) _photoModalIdx = 0;
+  _renderPhotoModal();
+  document.getElementById('photo-modal').classList.add('open');
+}
+
+function _renderPhotoModal() {
+  const p = _photoModalList[_photoModalIdx];
   if (!p) return;
   document.getElementById('photo-modal-img').src = p.src;
   document.getElementById('photo-modal-date').textContent = fmtDateFull(p.date);
-  document.getElementById('photo-modal').classList.add('open');
+  document.getElementById('photo-modal-counter').textContent =
+    _photoModalList.length > 1 ? `${_photoModalIdx + 1} / ${_photoModalList.length}` : '';
+  document.getElementById('photo-nav-prev').style.opacity = _photoModalIdx > 0 ? '1' : '0.15';
+  document.getElementById('photo-nav-next').style.opacity = _photoModalIdx < _photoModalList.length - 1 ? '1' : '0.15';
+}
+
+function photoModalNav(dir) {
+  const next = _photoModalIdx + dir;
+  if (next >= 0 && next < _photoModalList.length) {
+    _photoModalIdx = next;
+    _renderPhotoModal();
+  }
+}
+
+function downloadCurrentPhoto() {
+  const p = _photoModalList[_photoModalIdx];
+  if (!p) return;
+  const a = document.createElement('a');
+  a.href = p.src;
+  a.download = `liftnote-${p.date}.jpg`;
+  a.click();
+}
+
+async function deleteCurrentPhoto() {
+  const p = _photoModalList[_photoModalIdx];
+  if (!p) return;
+  closePhotoModal();
+  await deletePhoto(p.id);
 }
 
 function closePhotoModal(e) {
