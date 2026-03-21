@@ -5,3 +5,8 @@
 !.gitignore
 !fitness-tracker.html
 !vercel.json
+!manifest.json
+!service-worker.js
+!CLAUDE.md
+!_redirects
+!README.md
