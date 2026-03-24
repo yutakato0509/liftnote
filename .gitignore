@@ -12,3 +12,6 @@
 !README.md
 !wrangler.toml
 !index.html
+!icons/
+!icons/*.png
+!icons/*.svg
