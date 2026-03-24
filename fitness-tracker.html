@@ -933,6 +933,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .ob-dot.active { background:var(--accent); width:20px; border-radius:3px; }
 .ob-btn { width:100%; max-width:440px; padding:18px; border-radius:16px; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-size:16px; font-weight:800; border:none; cursor:pointer; font-family:inherit; -webkit-appearance:none; box-shadow:0 8px 28px rgba(255,85,0,.4); letter-spacing:.05em; transition:transform .12s; }
 .ob-btn:active { transform:scale(.97); }
+.ob-btn-skip { background:rgba(255,255,255,.06) !important; box-shadow:none !important; color:var(--sub) !important; font-size:14px !important; }
+.ob-pwa-btn { width:100%; max-width:440px; padding:17px; border-radius:16px; background:linear-gradient(135deg,#00d46a,#00b359); color:#fff; font-size:15px; font-weight:800; border:none; cursor:pointer; font-family:inherit; -webkit-appearance:none; box-shadow:0 6px 20px rgba(0,212,106,.35); letter-spacing:.04em; transition:transform .12s; margin-top:16px; }
+.ob-pwa-btn:active { transform:scale(.97); }
+.ob-ios-guide { margin-top:16px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:14px 16px; font-size:12px; color:var(--sub); line-height:1.9; text-align:left; width:100%; max-width:440px; }
+.ob-ios-guide strong { color:var(--text); }
 
 /* ═══════════ HOME BODY WEIGHT ═══════════ */
 .bw-home-row { display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; margin-top:4px; }
@@ -3671,34 +3676,53 @@ function checkOnboarding() {
 function _renderObSlide() {
   const s = OB_SLIDES[obSlide];
   const isLast = obSlide === OB_SLIDES.length - 1;
-  document.getElementById('ob-body').innerHTML = `
+  let bodyHTML = `
     <span class="ob-icon">${s.icon}</span>
     <div class="ob-title">${s.title}</div>
-    <div class="ob-text">${s.text}</div>
-    ${s.hasPwaBtn ? `
-      <button class="ob-pwa-btn" onclick="triggerPwaInstall();nextOnboarding();" style="
-        margin-top:16px;padding:13px 24px;border-radius:14px;
-        background:linear-gradient(135deg,var(--green),#00b359);
-        border:none;color:#000;font-size:13px;font-weight:900;
-        cursor:pointer;font-family:inherit;-webkit-appearance:none;
-        box-shadow:0 6px 20px rgba(0,212,106,.35);letter-spacing:.04em;
-        display:inline-flex;align-items:center;gap:6px;
-        transition:transform .12s;
-      ">📲 ホーム画面に追加</button>` : ''}`;
+    <div class="ob-text">${s.text}</div>`;
+  if (s.hasPwaBtn) {
+    if (_deferredInstallPrompt) {
+      bodyHTML += `<button class="ob-pwa-btn" onclick="triggerObPwaInstall()">📲 ホーム画面に追加</button>`;
+    } else {
+      bodyHTML += `<div class="ob-ios-guide">
+        <strong>① Safari</strong> でこのページを開く<br>
+        <strong>②</strong> 画面下部の 共有ボタン（□↑）をタップ<br>
+        <strong>③「ホーム画面に追加」</strong> を選択
+      </div>`;
+    }
+  }
+  document.getElementById('ob-body').innerHTML = bodyHTML;
   document.getElementById('ob-dots').innerHTML = OB_SLIDES.map((_,i) =>
     `<div class="ob-dot${i===obSlide?' active':''}"></div>`).join('');
-  document.getElementById('ob-btn').textContent = isLast ? '🔥 はじめる！' : '次へ →';
+  const btn = document.getElementById('ob-btn');
+  if (s.hasPwaBtn) {
+    btn.textContent = 'スキップして始める';
+    btn.classList.add('ob-btn-skip');
+  } else {
+    btn.textContent = isLast ? '🔥 はじめる！' : '次へ →';
+    btn.classList.remove('ob-btn-skip');
+  }
+}
+function _completeOnboarding() {
+  localStorage.setItem('ft_onboarded', '1');
+  document.getElementById('onboarding-overlay').classList.remove('open');
+  // 完了後、LOGタブへ自動遷移（初回記録を即促す）
+  const navItems = document.querySelectorAll('.nav-item');
+  if (navItems[1]) nav('record', navItems[1]);
+}
+function triggerObPwaInstall() {
+  if (_deferredInstallPrompt) {
+    _deferredInstallPrompt.prompt();
+    _deferredInstallPrompt.userChoice.then(() => { _deferredInstallPrompt = null; });
+  }
+  _completeOnboarding();
 }
 function nextOnboarding() {
   if (obSlide < OB_SLIDES.length - 1) {
     obSlide++;
     _renderObSlide();
   } else {
-    localStorage.setItem('ft_onboarded', '1');
-    document.getElementById('onboarding-overlay').classList.remove('open');
-    // 完了後、LOGタブへ自動遷移（初回記録を即促す）
-    const navItems = document.querySelectorAll('.nav-item');
-    if (navItems[1]) nav('record', navItems[1]);
+    _completeOnboarding();
   }
 }
 
@@ -4258,15 +4282,27 @@ function renderHome() {
     { key:'肩', icon:'💪' }, { key:'腕', icon:'💪' }, { key:'全身', icon:'⚡' }
   ];
   const muscleFreqHtml = (() => {
-    const weekTagDates = weekDays.filter(d => tagData[d]);
-    if (!weekTagDates.length) return '';
+    // 今週の頻度集計
     const freq = {};
-    weekTagDates.forEach(d => { (tagData[d] || []).forEach(tag => { freq[tag] = (freq[tag] || 0) + 1; }); });
-    const chips = muscleGroups
-      .filter(g => freq[g.key] > 0)
-      .map(g => `<span class="muscle-freq-chip">${g.icon} ${g.key} ×${freq[g.key]}</span>`)
-      .join('');
-    return chips ? `<div class="muscle-freq-row">${chips}</div>` : '';
+    weekDays.filter(d => tagData[d]).forEach(d => {
+      (tagData[d] || []).forEach(tag => { freq[tag] = (freq[tag] || 0) + 1; });
+    });
+    // 全記録から各部位の最終トレ日を取得
+    const allTagDates = Object.keys(tagData).sort((a,b) => b.localeCompare(a));
+    const chips = muscleGroups.map(g => {
+      const f = freq[g.key] || 0;
+      const lastDate = allTagDates.find(d => (tagData[d]||[]).includes(g.key));
+      let cls = '', label = '';
+      if (f > 0) {
+        cls = ''; label = `×${f}`;
+      } else if (lastDate) {
+        cls = ' warn'; label = '今週未';
+      } else {
+        cls = ' zero'; label = '未記録';
+      }
+      return `<span class="muscle-freq-chip${cls}">${g.icon} ${g.key} <span style="font-size:9px;opacity:.75;">${label}</span></span>`;
+    }).join('');
+    return `<div class="muscle-freq-row">${chips}</div>`;
   })();
 
   document.getElementById('home-week').innerHTML = `
@@ -4279,7 +4315,7 @@ function renderHome() {
       <div class="home-week-label">🏃 有酸素</div>
     </div>
     <div class="week-dots-row" style="grid-column:1/-1;">${dotsHtml}</div>
-    ${muscleFreqHtml ? `<div style="grid-column:1/-1;">${muscleFreqHtml}</div>` : ''}`;
+    <div style="grid-column:1/-1;">${muscleFreqHtml}</div>`;
 
   // リスタートバナー & 今日のミッション
   renderRestartBanner();
