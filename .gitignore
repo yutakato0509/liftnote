@@ -3,7 +3,7 @@
 
 # 以下のファイルのみ追跡
 !.gitignore
-!fitness-tracker.html
+!liftnote.html
 !vercel.json
 !manifest.json
 !service-worker.js
