@@ -2319,6 +2319,10 @@ function switchRecTab(panel, el) {
 }
 
 function nav(view, el) {
+  // 編集中にタブ移動したら自動リセット
+  if (view !== 'record' && (editingId.w || editingId.c || editingId.b)) {
+    resetWForm(); resetCForm();
+  }
   goToView(view);
   if (view === 'home')     renderHome();
   if (view === 'graph')    { fillExSel(); setTimeout(drawBwChart, 80); }
