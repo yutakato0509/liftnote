@@ -2204,6 +2204,85 @@ function save(k, d) {
 }
 
 /* ─────────────────────────────────────────
+   DRAFT AUTO-SAVE
+───────────────────────────────────────── */
+const DRAFT_KEYS = { w: 'ln_draft_w', c: 'ln_draft_c', b: 'ln_draft_b' };
+
+function saveDraft(type) {
+  try {
+    let data;
+    if (type === 'w') {
+      data = {
+        exercise: document.getElementById('w-exercise').value,
+        date:     document.getElementById('w-date').value,
+        memo:     document.getElementById('w-memo').value,
+        setData:  Array.from(document.querySelectorAll('#w-sets-container .set-row')).map(row => ({
+          weight:   row.querySelector('.set-weight').value,
+          reps:     row.querySelector('.set-reps').value,
+          assisted: row.querySelector('.set-assisted') ? row.querySelector('.set-assisted').value : '',
+        })),
+      };
+    } else if (type === 'c') {
+      data = {
+        type:     document.getElementById('c-type').value,
+        duration: document.getElementById('c-duration').value,
+        distance: document.getElementById('c-distance').value,
+        date:     document.getElementById('c-date').value,
+      };
+    } else if (type === 'b') {
+      data = {
+        weight: document.getElementById('b-weight').value,
+        fat:    document.getElementById('b-fat').value,
+        date:   document.getElementById('b-date').value,
+      };
+    }
+    if (data) localStorage.setItem(DRAFT_KEYS[type], JSON.stringify(data));
+  } catch (e) {}
+}
+
+function clearDraft(type) {
+  localStorage.removeItem(DRAFT_KEYS[type]);
+}
+
+function restoreDrafts() {
+  const parse = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
+
+  // ウエイト
+  const dw = parse(DRAFT_KEYS.w);
+  if (dw && (dw.exercise || (dw.setData && dw.setData.some(s => s.weight || s.reps)))) {
+    if (dw.exercise) {
+      document.getElementById('w-exercise').value = dw.exercise;
+      document.getElementById('w-exercise-clear').classList.add('visible');
+    }
+    if (dw.date) document.getElementById('w-date').value = dw.date;
+    if (dw.memo) document.getElementById('w-memo').value = dw.memo;
+    if (dw.setData && dw.setData.length > 0) {
+      document.getElementById('w-sets-container').innerHTML = '';
+      setRowCount = 0;
+      dw.setData.forEach(s => addSetRow(s.weight, s.reps, s.assisted));
+    }
+    toast('📋 入力途中のデータを復元しました');
+  }
+
+  // 有酸素
+  const dc = parse(DRAFT_KEYS.c);
+  if (dc && (dc.type || dc.duration)) {
+    if (dc.type)     document.getElementById('c-type').value     = dc.type;
+    if (dc.duration) document.getElementById('c-duration').value = dc.duration;
+    if (dc.distance) document.getElementById('c-distance').value = dc.distance;
+    if (dc.date)     document.getElementById('c-date').value     = dc.date;
+  }
+
+  // 体重
+  const db = parse(DRAFT_KEYS.b);
+  if (db && db.weight) {
+    document.getElementById('b-weight').value = db.weight;
+    if (db.fat)  document.getElementById('b-fat').value  = db.fat;
+    if (db.date) document.getElementById('b-date').value = db.date;
+  }
+}
+
+/* ─────────────────────────────────────────
    UTILS
 ───────────────────────────────────────── */
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -2265,6 +2344,26 @@ window.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('photo-date').value = today();
   addSetRow();
+  restoreDrafts();
+
+  // ドラフト自動保存リスナー
+  ['w-exercise','w-date','w-memo'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input',  () => saveDraft('w'));
+    el.addEventListener('change', () => saveDraft('w'));
+  });
+  document.getElementById('w-sets-container').addEventListener('input', () => saveDraft('w'));
+  ['c-type','c-duration','c-distance','c-date'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input',  () => saveDraft('c'));
+    el.addEventListener('change', () => saveDraft('c'));
+  });
+  ['b-weight','b-fat','b-date'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input',  () => saveDraft('b'));
+    el.addEventListener('change', () => saveDraft('b'));
+  });
+
   renderDayTagChips();
   renderHome();
   renderWRecent();
@@ -2332,6 +2431,7 @@ function sortDesc(arr) {
 
 // ─── フォームリセット ───────────────────────
 function resetWForm() {
+  clearDraft('w');
   editingId.w = null;
   document.getElementById('w-exercise').value = '';
   document.getElementById('w-exercise-clear').classList.remove('visible');
@@ -2346,6 +2446,7 @@ function resetWForm() {
   addSetRow();
 }
 function resetCForm() {
+  clearDraft('c');
   editingId.c = null;
   document.getElementById('c-type').value     = '';
   document.getElementById('c-duration').value = '';
@@ -2356,6 +2457,7 @@ function resetCForm() {
   document.getElementById('c-cancel-btn').style.display = 'none';
 }
 function resetBForm() {
+  clearDraft('b');
   editingId.b = null;
   document.getElementById('b-weight').value = '';
   document.getElementById('b-fat').value    = '';
