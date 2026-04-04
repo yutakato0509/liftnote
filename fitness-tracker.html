@@ -302,10 +302,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 
 .btn-ghost {
   background: transparent; border: 1px solid #2a2a2a;
-  color: var(--sub); font-size: 11px; padding: 7px 13px;
+  color: var(--sub); font-size: 11px; padding: 0 13px;
   border-radius: 8px; width: auto; font-weight: 700;
   text-transform: uppercase; letter-spacing: .04em;
   transition: all .18s;
+  min-height: 36px; min-width: 48px; display: inline-flex; align-items: center; justify-content: center;
 }
 .btn-ghost:active { background: rgba(255,59,48,.12); border-color: var(--red); color: var(--red); }
 
@@ -563,12 +564,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .btn-cancel:active { background: rgba(255,59,48,.1); border-color: var(--red); color: var(--red); }
 
 /* ═══════════ EDIT BUTTON ═══════════ */
-.rec-actions { display: flex; gap: 5px; }
+.rec-actions { display: flex; gap: 8px; align-items: center; }
 .btn-edit {
   background: rgba(255,85,0,.08); border: 1px solid rgba(255,85,0,.2);
-  color: var(--accent); font-size: 11px; padding: 7px 11px; border-radius: 8px;
+  color: var(--accent); font-size: 11px; padding: 0 13px; border-radius: 8px;
   font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   cursor: pointer; -webkit-appearance: none; font-family: inherit; transition: background .15s;
+  min-height: 36px; min-width: 48px; display: inline-flex; align-items: center; justify-content: center;
 }
 .btn-edit:active { background: rgba(255,85,0,.2); }
 
@@ -1616,6 +1618,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       <div class="notif-banner-sub">24時間サボったら通知で背中を押します</div>
     </div>
     <button class="notif-banner-btn" onclick="requestNotifPermission()">ON にする</button>
+    <button class="notif-banner-btn" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:var(--sub);margin-left:4px;" onclick="snoozeNotifBanner()">後で</button>
     <button class="notif-banner-close" onclick="dismissNotifBanner()">✕</button>
   </div>
 
@@ -1625,7 +1628,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div class="restart-icon">🔥</div>
     <div>
       <div class="restart-title">お帰り！<span id="restart-days"></span>ぶりだね</div>
-      <div class="restart-sub">今日、1種目だけやろう →</div>
+      <div class="restart-sub" id="restart-sub">習慣を取り戻そう。今日1種目だけやろう →</div>
     </div>
   </div>
 
@@ -1942,6 +1945,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
         <button class="period-btn" onclick="setPeriodEx('3m',this)">3ヶ月</button>
         <button class="period-btn active" onclick="setPeriodEx('all',this)">全期間</button>
       </div>
+      <div class="period-group" style="margin-top:8px;margin-bottom:0;">
+        <button class="period-btn active" id="ex-metric-maxw" onclick="setExMetric('maxw',this)">最大重量</button>
+        <button class="period-btn" id="ex-metric-volume" onclick="setExMetric('volume',this)">Volume</button>
+        <button class="period-btn" id="ex-metric-reps" onclick="setExMetric('reps',this)">Avg Reps</button>
+      </div>
     </div>
     <div class="card" id="ex-chart-card" style="display:none;">
       <div class="card-label" id="ex-chart-label">Max Weight Trend</div>
@@ -2204,6 +2212,85 @@ function save(k, d) {
 }
 
 /* ─────────────────────────────────────────
+   DRAFT AUTO-SAVE
+───────────────────────────────────────── */
+const DRAFT_KEYS = { w: 'ln_draft_w', c: 'ln_draft_c', b: 'ln_draft_b' };
+
+function saveDraft(type) {
+  try {
+    let data;
+    if (type === 'w') {
+      data = {
+        exercise: document.getElementById('w-exercise').value,
+        date:     document.getElementById('w-date').value,
+        memo:     document.getElementById('w-memo').value,
+        setData:  Array.from(document.querySelectorAll('#w-sets-container .set-row')).map(row => ({
+          weight:   row.querySelector('.set-weight').value,
+          reps:     row.querySelector('.set-reps').value,
+          assisted: row.querySelector('.set-assisted') ? row.querySelector('.set-assisted').value : '',
+        })),
+      };
+    } else if (type === 'c') {
+      data = {
+        type:     document.getElementById('c-type').value,
+        duration: document.getElementById('c-duration').value,
+        distance: document.getElementById('c-distance').value,
+        date:     document.getElementById('c-date').value,
+      };
+    } else if (type === 'b') {
+      data = {
+        weight: document.getElementById('b-weight').value,
+        fat:    document.getElementById('b-fat').value,
+        date:   document.getElementById('b-date').value,
+      };
+    }
+    if (data) localStorage.setItem(DRAFT_KEYS[type], JSON.stringify(data));
+  } catch (e) {}
+}
+
+function clearDraft(type) {
+  localStorage.removeItem(DRAFT_KEYS[type]);
+}
+
+function restoreDrafts() {
+  const parse = key => { try { return JSON.parse(localStorage.getItem(key)); } catch { return null; } };
+
+  // ウエイト
+  const dw = parse(DRAFT_KEYS.w);
+  if (dw && (dw.exercise || (dw.setData && dw.setData.some(s => s.weight || s.reps)))) {
+    if (dw.exercise) {
+      document.getElementById('w-exercise').value = dw.exercise;
+      document.getElementById('w-exercise-clear').classList.add('visible');
+    }
+    if (dw.date) document.getElementById('w-date').value = dw.date;
+    if (dw.memo) document.getElementById('w-memo').value = dw.memo;
+    if (dw.setData && dw.setData.length > 0) {
+      document.getElementById('w-sets-container').innerHTML = '';
+      setRowCount = 0;
+      dw.setData.forEach(s => addSetRow(s.weight, s.reps, s.assisted));
+    }
+    toast('📋 入力途中のデータを復元しました');
+  }
+
+  // 有酸素
+  const dc = parse(DRAFT_KEYS.c);
+  if (dc && (dc.type || dc.duration)) {
+    if (dc.type)     document.getElementById('c-type').value     = dc.type;
+    if (dc.duration) document.getElementById('c-duration').value = dc.duration;
+    if (dc.distance) document.getElementById('c-distance').value = dc.distance;
+    if (dc.date)     document.getElementById('c-date').value     = dc.date;
+  }
+
+  // 体重
+  const db = parse(DRAFT_KEYS.b);
+  if (db && db.weight) {
+    document.getElementById('b-weight').value = db.weight;
+    if (db.fat)  document.getElementById('b-fat').value  = db.fat;
+    if (db.date) document.getElementById('b-date').value = db.date;
+  }
+}
+
+/* ─────────────────────────────────────────
    UTILS
 ───────────────────────────────────────── */
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -2241,13 +2328,20 @@ function toast(msg) {
   el.classList.add('show');
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
+let _countdownInterval = null;
 function toastUndo() {
   clearTimeout(_toastTimer);
   clearTimeout(_deleteTimer);
+  clearInterval(_countdownInterval);
   const el = document.getElementById('toast');
-  el.innerHTML = '🗑️ 削除しました <button class="undo-btn" onclick="undoDelete()">元に戻す</button>';
+  let remaining = 8;
+  const render = () => {
+    el.innerHTML = `🗑️ 削除しました <button class="undo-btn" onclick="undoDelete()">元に戻す</button> <span style="font-size:10px;color:var(--sub);margin-left:4px;">${remaining}s</span>`;
+  };
+  render();
   el.classList.add('show');
-  _deleteTimer = setTimeout(() => { el.classList.remove('show'); _deletedRecord = null; }, 8000);
+  _countdownInterval = setInterval(() => { remaining--; if (remaining > 0) render(); else clearInterval(_countdownInterval); }, 1000);
+  _deleteTimer = setTimeout(() => { el.classList.remove('show'); _deletedRecord = null; clearInterval(_countdownInterval); }, 8000);
 }
 
 /* ─────────────────────────────────────────
@@ -2265,6 +2359,26 @@ window.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('photo-date').value = today();
   addSetRow();
+  restoreDrafts();
+
+  // ドラフト自動保存リスナー
+  ['w-exercise','w-date','w-memo'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input',  () => saveDraft('w'));
+    el.addEventListener('change', () => saveDraft('w'));
+  });
+  document.getElementById('w-sets-container').addEventListener('input', () => saveDraft('w'));
+  ['c-type','c-duration','c-distance','c-date'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input',  () => saveDraft('c'));
+    el.addEventListener('change', () => saveDraft('c'));
+  });
+  ['b-weight','b-fat','b-date'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input',  () => saveDraft('b'));
+    el.addEventListener('change', () => saveDraft('b'));
+  });
+
   renderDayTagChips();
   renderHome();
   renderWRecent();
@@ -2332,6 +2446,7 @@ function sortDesc(arr) {
 
 // ─── フォームリセット ───────────────────────
 function resetWForm() {
+  clearDraft('w');
   editingId.w = null;
   document.getElementById('w-exercise').value = '';
   document.getElementById('w-exercise-clear').classList.remove('visible');
@@ -2346,6 +2461,7 @@ function resetWForm() {
   addSetRow();
 }
 function resetCForm() {
+  clearDraft('c');
   editingId.c = null;
   document.getElementById('c-type').value     = '';
   document.getElementById('c-duration').value = '';
@@ -2356,6 +2472,7 @@ function resetCForm() {
   document.getElementById('c-cancel-btn').style.display = 'none';
 }
 function resetBForm() {
+  clearDraft('b');
   editingId.b = null;
   document.getElementById('b-weight').value = '';
   document.getElementById('b-fat').value    = '';
@@ -2499,24 +2616,22 @@ function saveWeight() {
   if (!editingId.w) setTimeout(() => checkBadges(), 600);
   // 次の種目をすぐ入力できるようフォーカス
   setTimeout(() => { const ex = document.getElementById('w-exercise'); if (ex) ex.focus(); }, 80);
-  // ORDER-02: 2段階トースト（今日N種目目 + 前回比）
+  // 1本トースト（今日N種目目 + 前回比を統合）
   if (isNewRecord) {
-    setTimeout(() => {
-      const todayCount = load(K.w).filter(r => r.date === date).length;
-      if (prevRecord) {
-        const newMaxW  = Math.max(...setData.map(s => s.weight||0));
-        const prevMaxW = Math.max(...(prevRecord.setData||[{weight:prevRecord.weight||0}]).map(s=>s.weight||0));
-        const diff = newMaxW - prevMaxW;
-        const diffStr = diff > 0 ? `+${diff}kg 📈` : diff < 0 ? `${diff}kg 📉` : '±0kg';
-        toast(`今日 ${todayCount}種目目！ | 前回比 ${diffStr}`);
-      } else {
-        toast(`今日 ${todayCount}種目目！ | 続けて記録しよう 💪`);
-      }
-    }, 900);
+    const todayCount = load(K.w).filter(r => r.date === date).length;
+    if (prevRecord) {
+      const newMaxW  = Math.max(...setData.map(s => s.weight||0));
+      const prevMaxW = Math.max(...(prevRecord.setData||[{weight:prevRecord.weight||0}]).map(s=>s.weight||0));
+      const diff = newMaxW - prevMaxW;
+      const diffStr = diff > 0 ? `+${diff}kg 📈` : diff < 0 ? `${diff}kg 📉` : '±0kg';
+      toast(`🎉 記録！今日${todayCount}種目 | 前回比 ${diffStr}`);
+    } else {
+      toast(`🎉 記録！今日${todayCount}種目 | 続けて記録しよう 💪`);
+    }
   }
-  // Layer 2: 前回記録との比較シートを表示
+  // 前回記録との比較シートを表示
   if (isNewRecord && prevRecord) {
-    setTimeout(() => showSaveComparison(exercise, setData, prevRecord), 1800);
+    setTimeout(() => showSaveComparison(exercise, setData, prevRecord), 1000);
   }
 }
 
@@ -3059,6 +3174,13 @@ function fillExSel() {
   if (selected) drawExChart();
 }
 
+let exMetric = 'maxw'; // 'maxw' | 'volume' | 'reps'
+function setExMetric(m, btn) {
+  exMetric = m;
+  document.querySelectorAll('#ex-metric-maxw, #ex-metric-volume, #ex-metric-reps').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  drawExChart();
+}
 function drawExChart() {
   if (typeof Chart === 'undefined') return;
   if (exChart) { exChart.destroy(); exChart = null; }
@@ -3066,15 +3188,28 @@ function drawExChart() {
   const card     = document.getElementById('ex-chart-card');
   if (!exercise) { card.style.display='none'; return; }
 
+  const metricLabels = { maxw: 'MAX WEIGHT TREND', volume: 'VOLUME TREND (kg×reps×sets)', reps: 'AVG REPS TREND' };
+  const metricUnits  = { maxw: 'kg', volume: 'kg', reps: 'reps' };
   card.style.display = 'block';
-  document.getElementById('ex-chart-label').textContent = `${exercise} — MAX WEIGHT TREND`;
+  document.getElementById('ex-chart-label').textContent = `${exercise} — ${metricLabels[exMetric] || 'MAX WEIGHT TREND'}`;
 
   const all  = load(K.w).filter(r => r.exercise === exercise);
   const recs = filterByPeriod(all, graphPeriod.ex);
   const byDate = {};
   recs.forEach(r => {
-    const maxW = r.setData ? Math.max(...r.setData.map(s => s.weight || 0)) : (r.weight || 0);
-    if (!byDate[r.date] || maxW > byDate[r.date]) byDate[r.date] = maxW;
+    const sets = r.setData || [{ weight: r.weight||0, reps: r.reps||0 }];
+    let val;
+    if (exMetric === 'volume') {
+      val = sets.reduce((s, x) => s + (x.weight||0) * (x.reps||0), 0);
+      if (!byDate[r.date]) byDate[r.date] = 0;
+      byDate[r.date] += val;
+    } else if (exMetric === 'reps') {
+      val = sets.reduce((s, x) => s + (x.reps||0), 0) / sets.length;
+      if (!byDate[r.date] || val > byDate[r.date]) byDate[r.date] = Math.round(val * 10) / 10;
+    } else {
+      val = Math.max(...sets.map(s => s.weight||0));
+      if (!byDate[r.date] || val > byDate[r.date]) byDate[r.date] = val;
+    }
   });
   const dates  = Object.keys(byDate).sort((a,b)=>a.localeCompare(b));
   const canvas = resetChartWrap('ex-chart-wrap','ex-chart');
@@ -3090,7 +3225,7 @@ function drawExChart() {
     data: {
       labels: dates.map(fmtDateShort),
       datasets: [{
-        label: '最大重量',
+        label: metricLabels[exMetric],
         data:  dates.map(d => byDate[d]),
         borderColor: '#ff5500',
         backgroundColor: (ctx) => {
@@ -3106,7 +3241,7 @@ function drawExChart() {
         borderWidth: 2.5,
       }]
     },
-    options: chartOpts('kg')
+    options: chartOpts(metricUnits[exMetric] || 'kg')
   });
 }
 
@@ -3780,6 +3915,7 @@ function checkNotifBanner() {
   }
   if (Notification.permission === 'denied') return;
   if (localStorage.getItem('ft_notif_dismissed')) return;
+  if (sessionStorage.getItem('ft_notif_snoozed')) return;
   // 3件以上記録があればバナー表示
   const total = load(K.w).length + load(K.c).length;
   if (total < 3) return;
@@ -3789,6 +3925,10 @@ function checkNotifBanner() {
 function dismissNotifBanner() {
   document.getElementById('notif-banner').classList.remove('show');
   localStorage.setItem('ft_notif_dismissed', '1');
+}
+function snoozeNotifBanner() {
+  document.getElementById('notif-banner').classList.remove('show');
+  sessionStorage.setItem('ft_notif_snoozed', '1');
 }
 
 async function requestNotifPermission() {
@@ -3948,6 +4088,7 @@ function delRec(key, id, cb) {
 function undoDelete() {
   if (!_deletedRecord) return;
   clearTimeout(_deleteTimer);
+  clearInterval(_countdownInterval);
   const { key, record, cb } = _deletedRecord;
   _deletedRecord = null;
   const arr = load(key);
@@ -3961,8 +4102,9 @@ function undoDelete() {
 /* ─────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────── */
-function emptyHTML(icon, msg) {
-  return `<div class="empty"><span class="ei">${icon}</span><p>${msg}</p></div>`;
+function emptyHTML(icon, msg, showCta = true) {
+  const cta = showCta ? `<button onclick="nav('record',document.querySelectorAll('.nav-item')[1])" style="margin-top:14px;padding:10px 24px;border-radius:20px;border:1px solid rgba(255,85,0,.4);background:rgba(255,85,0,.1);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.05em;font-family:inherit;-webkit-appearance:none;">記録する →</button>` : '';
+  return `<div class="empty"><span class="ei">${icon}</span><p>${msg}</p>${cta}</div>`;
 }
 function esc(s) {
   return String(s)
@@ -4194,9 +4336,15 @@ async function deletePhoto(id) {
   await dbDel(id);
   clearTimeout(_toastTimer);
   clearTimeout(_deleteTimer);
+  clearInterval(_countdownInterval);
   const el = document.getElementById('toast');
-  el.innerHTML = '🗑️ 写真を削除しました <button class="undo-btn" onclick="undoDeletePhoto()">元に戻す</button>';
+  let remaining = 8;
+  const renderPhoto = () => {
+    el.innerHTML = `🗑️ 写真を削除しました <button class="undo-btn" onclick="undoDeletePhoto()">元に戻す</button> <span style="font-size:10px;color:var(--sub);margin-left:4px;">${remaining}s</span>`;
+  };
+  renderPhoto();
   el.classList.add('show');
+  _countdownInterval = setInterval(() => { remaining--; if (remaining > 0) renderPhoto(); else clearInterval(_countdownInterval); }, 1000);
   _deleteTimer = setTimeout(async () => {
     el.classList.remove('show');
     if (!_deletedPhoto) return;
@@ -4363,14 +4511,20 @@ function renderHome() {
 
   // ストリーク
   ['w','c'].forEach(type => {
-    const el  = document.getElementById(`home-${type}-streak`);
-    const n   = calcStreak(load(type === 'w' ? K.w : K.c));
-    const lbl = type === 'w' ? '💪 ウエイト' : '🏃 有酸素';
+    const el   = document.getElementById(`home-${type}-streak`);
+    const recs = load(type === 'w' ? K.w : K.c);
+    const n    = calcStreak(recs);
+    const days = calcDayStreak(recs);
+    const lbl  = type === 'w' ? '💪 ウエイト' : '🏃 有酸素';
     const numHtml = n === 0
       ? `<div class="home-streak-mini-num" style="font-size:22px;line-height:1.4;">今日から！</div>`
-      : `<div class="home-streak-mini-num">${n}</div>`;
+      : `<div class="home-streak-mini-num">${n}<span style="font-size:12px;font-weight:700;color:var(--sub);margin-left:2px;">週</span></div>`;
+    const daysHtml = days > 0
+      ? `<div style="font-size:10px;font-weight:800;color:var(--accent);margin-top:2px;letter-spacing:.04em;">🔥 ${days}日連続</div>`
+      : '';
     el.innerHTML = `
       ${numHtml}
+      ${daysHtml}
       <div class="home-streak-mini-label">${lbl} / 週連続</div>
       <div class="home-streak-mini-msg">${streakMsg(n, type)}</div>`;
   });
@@ -4474,6 +4628,20 @@ function calcStreak(records) {
     const hasWorkout = [...dates].some(d => d >= monStr && d <= sunStr);
     if (!hasWorkout) { if (w === 0) continue; break; }
     streak++;
+  }
+  return streak;
+}
+function calcDayStreak(records) {
+  if (!records.length) return 0;
+  const dates = new Set(records.map(r => r.date));
+  const t = today();
+  const [ty, tm, td] = t.split('-').map(Number);
+  let streak = 0;
+  for (let i = 0; i < 3650; i++) {
+    const dt = new Date(Date.UTC(ty, tm - 1, td - i, 12));
+    const ds = dt.toISOString().slice(0, 10);
+    if (dates.has(ds)) { streak++; }
+    else { if (i === 0) continue; break; }
   }
   return streak;
 }
@@ -4746,12 +4914,23 @@ function renderMonthlySummary() {
   const monthStart = `${ty}-${String(tm).padStart(2,'0')}-01`;
   const monthEnd   = `${ty}-${String(tm).padStart(2,'0')}-31`;
 
+  // 先月の範囲
+  const pmDate = new Date(Date.UTC(ty, tm - 2, 1, 12));
+  const prevMonthStart = `${pmDate.getUTCFullYear()}-${String(pmDate.getUTCMonth()+1).padStart(2,'0')}-01`;
+  const prevMonthEnd   = `${pmDate.getUTCFullYear()}-${String(pmDate.getUTCMonth()+1).padStart(2,'0')}-31`;
+
   const wAll = load(K.w).filter(r => r.date >= monthStart && r.date <= monthEnd);
   const cAll = load(K.c).filter(r => r.date >= monthStart && r.date <= monthEnd);
   const bAll = load(K.b).filter(r => r.date >= monthStart && r.date <= monthEnd);
+  const wPrev = load(K.w).filter(r => r.date >= prevMonthStart && r.date <= prevMonthEnd);
+  const cPrev = load(K.c).filter(r => r.date >= prevMonthStart && r.date <= prevMonthEnd);
 
   const wDays = new Set(wAll.map(r => r.date)).size;
   const cDays = new Set(cAll.map(r => r.date)).size;
+  const wDaysPrev = new Set(wPrev.map(r => r.date)).size;
+  const cDaysPrev = new Set(cPrev.map(r => r.date)).size;
+  const wDiff = wDays - wDaysPrev, cDiff = cDays - cDaysPrev;
+  const diffStr = (n) => n === 0 ? '' : n > 0 ? `<span style="font-size:9px;color:var(--green);font-weight:800;margin-left:4px;">▲${n}</span>` : `<span style="font-size:9px;color:var(--red);font-weight:800;margin-left:4px;">▼${Math.abs(n)}</span>`;
 
   // 今月の最高1RM
   let bestRM = 0, bestEx = '';
@@ -4780,12 +4959,14 @@ function renderMonthlySummary() {
     <div style="font-size:10px;color:var(--sub);font-weight:700;letter-spacing:.06em;margin-bottom:10px;text-transform:uppercase;">${mnLabel}</div>
     <div class="monthly-grid">
       <div class="monthly-item">
-        <div class="monthly-num">${wDays}</div>
+        <div class="monthly-num">${wDays}${diffStr(wDiff)}</div>
         <div class="monthly-label">💪 ウエイト日数</div>
+        ${wDaysPrev > 0 ? `<div style="font-size:9px;color:var(--sub);margin-top:3px;">先月 ${wDaysPrev}日</div>` : ''}
       </div>
       <div class="monthly-item">
-        <div class="monthly-num green">${cDays}</div>
+        <div class="monthly-num green">${cDays}${diffStr(cDiff)}</div>
         <div class="monthly-label">🏃 有酸素日数</div>
+        ${cDaysPrev > 0 ? `<div style="font-size:9px;color:var(--sub);margin-top:3px;">先月 ${cDaysPrev}日</div>` : ''}
       </div>
       ${bestRM > 0 ? `<div class="monthly-item" style="grid-column:1/-1;">
         <div style="font-size:11px;color:var(--sub);margin-bottom:4px;font-weight:700;">${esc(bestEx)}</div>
@@ -4874,6 +5055,10 @@ function renderRestartBanner() {
   if (diff >= 3) {
     el.style.display = 'flex';
     document.getElementById('restart-days').textContent = diff + '日';
+    const suggestions = ['ベンチプレス', 'スクワット', 'デッドリフト', '懸垂', '腕立て伏せ'];
+    const pick = suggestions[Math.floor(Math.random() * suggestions.length)];
+    const sub = document.getElementById('restart-sub');
+    if (sub) sub.textContent = `習慣を取り戻そう。今日は「${pick}」からでもOK →`;
   } else {
     el.style.display = 'none';
   }
@@ -4926,7 +5111,10 @@ function renderTodayMission() {
   // 今日トレ済みならチェックを表示
   if (todayWRecs.length > 0) {
     const exNames = [...new Set(todayWRecs.map(r => r.exercise))];
-    const streak = calcStreak(load(K.w));
+    const wAll = load(K.w);
+    const streak = calcStreak(wAll);
+    const dayStreak = calcDayStreak(wAll);
+    const streakLabel = dayStreak > 0 ? `🔥 ${dayStreak}日連続（${streak}週）継続中` : streak > 0 ? `🔥 ${streak}週連続継続中` : '';
     el.innerHTML = `
       <div class="mission-done-row">
         <span class="mission-done-icon">✅</span>
@@ -4935,7 +5123,7 @@ function renderTodayMission() {
           <div class="mission-done-exs">${exNames.slice(0,4).map(e => esc(e)).join('　·　')}</div>
         </div>
       </div>
-      ${streak > 0 ? `<div class="mission-streak-chip">🔥 ${streak}週連続継続中</div>` : ''}
+      ${streakLabel ? `<div class="mission-streak-chip">${streakLabel}</div>` : ''}
       ${dots7Html}`;
     return;
   }
