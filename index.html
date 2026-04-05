@@ -1648,7 +1648,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 <div class="share-sheet-overlay" id="share-sheet-overlay" onclick="closeShareSheet(event)">
   <div class="share-sheet">
     <div class="share-sheet-title">友達にシェア</div>
-    <div class="share-sheet-url">https://liftnote.pages.dev</div>
+    <div class="share-sheet-url">https://yutakato0509.github.io/liftnote/</div>
     <div class="share-btns">
       <button class="share-btn-item" onclick="shareAction('copy')">
         <span class="share-icon">📋</span>
@@ -3460,7 +3460,7 @@ function tagBadgesHTML(tags) {
 /* ─────────────────────────────────────────
    SHARE
 ───────────────────────────────────────── */
-const SHARE_URL  = 'https://liftnote.pages.dev';
+const SHARE_URL  = 'https://yutakato0509.github.io/liftnote/';
 const SHARE_TEXT = '🔥 LiftNote — テクノロジー×筋肉で習慣をハック。無料・インストール不要の筋トレ記録アプリ！\n#LiftNote #筋トレ #個人開発';
 
 function openShareSheet() {
@@ -3543,9 +3543,9 @@ function sharePrModal() {
   const { exercise, newRM, diffRM } = _prModalData;
   const text = `🏆 NEW PR！\n${exercise} 推定1RM ${newRM}kg${diffRM>0?` (+${diffRM}kg)`:''}🔥\n\nLiftNoteで記録中 #LiftNote #筋トレ #${exercise.replace(/\s/g,'')}`;
   if (navigator.share) {
-    navigator.share({ title:'LiftNote PR更新！', text, url:'https://liftnote.pages.dev' }).catch(()=>{});
+    navigator.share({ title:'LiftNote PR更新！', text, url:'https://yutakato0509.github.io/liftnote/' }).catch(()=>{});
   } else {
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://liftnote.pages.dev')}`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://yutakato0509.github.io/liftnote/')}`, '_blank');
   }
   closePrModal();
 }
@@ -3575,7 +3575,7 @@ function closeLoginPrompt() {
 /* 友達に紹介（Web Share API） */
 function shareInvite() {
   const text = '筋トレ記録アプリ LiftNote を使ってみて！';
-  const url  = 'https://liftnote.pages.dev';
+  const url  = 'https://yutakato0509.github.io/liftnote/';
   if (navigator.share) {
     navigator.share({ title: 'LiftNote', text, url }).catch(() => {});
   } else {
@@ -5301,7 +5301,7 @@ function awardBadge(id, meta) {
 function shareBadge(id) {
   const def = BADGES[id];
   if (!def) return;
-  const text = encodeURIComponent(def.shareText + '\n\nhttps://liftnote.pages.dev');
+  const text = encodeURIComponent(def.shareText + '\n\nhttps://yutakato0509.github.io/liftnote/');
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 }
 
