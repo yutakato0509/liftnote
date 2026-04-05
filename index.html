@@ -1947,6 +1947,20 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     </div>
     <div class="section-title" style="margin:8px 2px 12px;">最近のログ</div>
     <div id="b-recent"></div>
+
+    <div class="card" id="bw-chart-card" style="margin-top:4px;">
+      <div class="card-label" style="color:var(--amber);">⚖️ Body Weight Trend</div>
+      <div class="glow-line" style="background: linear-gradient(90deg, transparent, rgba(255,149,0,.2) 50%, transparent);"></div>
+      <div id="bw-goal-banner" class="bw-goal-banner" style="display:none;"></div>
+      <div class="period-group">
+        <button class="period-btn" onclick="setPeriodBw('1m',this)">1ヶ月</button>
+        <button class="period-btn" onclick="setPeriodBw('3m',this)">3ヶ月</button>
+        <button class="period-btn active" onclick="setPeriodBw('all',this)">全期間</button>
+      </div>
+      <div class="chart-wrap" id="bw-chart-wrap">
+        <canvas id="bw-chart"></canvas>
+      </div>
+    </div>
   </div>
 
   <!-- フォトパネル -->
@@ -1979,10 +1993,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 </div>
 
 <!-- ═══════════════════════════════════════
-     VIEW: グラフ
-════════════════════════════════════════ -->
-
-<!-- ═══════════════════════════════════════
      VIEW: カレンダー
 ════════════════════════════════════════ -->
 <div id="view-calendar" class="view">
@@ -2001,20 +2011,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div class="card-label">📊 Monthly Report</div>
     <div class="glow-line"></div>
     <div id="cal-monthly-stats"></div>
-  </div>
-
-  <div class="card" id="bw-chart-card">
-    <div class="card-label" style="color:var(--amber);">⚖️ Body Weight Trend</div>
-    <div class="glow-line" style="background: linear-gradient(90deg, transparent, rgba(255,149,0,.2) 50%, transparent);"></div>
-    <div id="bw-goal-banner" class="bw-goal-banner" style="display:none;"></div>
-    <div class="period-group">
-      <button class="period-btn" onclick="setPeriodBw('1m',this)">1ヶ月</button>
-      <button class="period-btn" onclick="setPeriodBw('3m',this)">3ヶ月</button>
-      <button class="period-btn active" onclick="setPeriodBw('all',this)">全期間</button>
-    </div>
-    <div class="chart-wrap" id="bw-chart-wrap">
-      <canvas id="bw-chart"></canvas>
-    </div>
   </div>
 
   <!-- 履歴リスト -->
@@ -2429,12 +2425,13 @@ function switchRecTab(panel, el) {
   const btn = el || document.querySelector(`[data-panel="${panel}"]`);
   if (btn) btn.classList.add('active');
   if (panel === 'photo') renderPhotoGrid();
+  if (panel === 'body') setTimeout(drawBwChart, 80);
 }
 
 function nav(view, el) {
   goToView(view);
   if (view === 'home')     renderHome();
-  if (view === 'calendar') { renderCalendar(); renderHistory(); setTimeout(drawBwChart, 80); }
+  if (view === 'calendar') { renderCalendar(); renderHistory(); }
 }
 
 // 新しい順（日付降順）で並び替え
