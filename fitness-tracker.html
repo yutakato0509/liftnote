@@ -1694,6 +1694,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     </div>
   </div>
 
+  <!-- Hero: greeting + 体重 + insight -->
+  <div class="card">
+    <div class="hero-tagline">テクノロジー × 筋肉で習慣をハックする</div>
+    <div class="home-greeting" id="home-greeting"></div>
+    <div id="home-today-tags" style="margin-bottom:4px;min-height:0;"></div>
+    <div id="home-hero-bw" style="margin:2px 0 12px;"></div>
+    <div id="home-insight-badge" style="display:none;"></div>
+  </div>
+
   <!-- 今日のミッション -->
   <div class="card" id="home-mission-card">
     <div class="card-label">🎯 Today's Mission</div>
@@ -1706,20 +1715,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div class="card-label">🧬 Habit Score</div>
     <div class="glow-line"></div>
     <div id="home-hs-content"></div>
-  </div>
-
-  <!-- Hero: greeting + 体重 + insight + streaks -->
-  <div class="card">
-    <div class="hero-tagline">テクノロジー × 筋肉で習慣をハックする</div>
-    <div class="home-greeting" id="home-greeting"></div>
-    <div id="home-today-tags" style="margin-bottom:4px;min-height:0;"></div>
-    <div id="home-hero-bw" style="margin:2px 0 12px;"></div>
-    <div id="home-insight-badge" style="display:none;"></div>
-    <div class="glow-line" style="margin-top:18px;margin-bottom:14px;"></div>
-    <div class="home-streak-row" style="margin-bottom:0;">
-      <div class="home-streak-mini" id="home-w-streak"></div>
-      <div class="home-streak-mini green" id="home-c-streak"></div>
-    </div>
   </div>
 
   <!-- This Week -->
@@ -4464,26 +4459,6 @@ function renderHome() {
     badge.style.display = 'none';
   }
 
-  // ストリーク
-  ['w','c'].forEach(type => {
-    const el   = document.getElementById(`home-${type}-streak`);
-    const recs = load(type === 'w' ? K.w : K.c);
-    const n    = calcStreak(recs);
-    const days = calcDayStreak(recs);
-    const lbl  = type === 'w' ? '💪 ウエイト' : '🏃 有酸素';
-    const numHtml = n === 0
-      ? `<div class="home-streak-mini-num" style="font-size:22px;line-height:1.4;">今日から！</div>`
-      : `<div class="home-streak-mini-num">${n}<span style="font-size:12px;font-weight:700;color:var(--sub);margin-left:2px;">週</span></div>`;
-    const daysHtml = days > 0
-      ? `<div style="font-size:10px;font-weight:800;color:var(--accent);margin-top:2px;letter-spacing:.04em;">🔥 ${days}日連続</div>`
-      : '';
-    el.innerHTML = `
-      ${numHtml}
-      ${daysHtml}
-      <div class="home-streak-mini-label">${lbl} / 週連続</div>
-      <div class="home-streak-mini-msg">${streakMsg(n, type)}</div>`;
-  });
-
   // 今週サマリー
   const { wDays, cDays } = getWeekStats();
   const dow = parseDate(today()).dow;
@@ -4491,17 +4466,6 @@ function renderHome() {
   const [wy, wm, wd] = monday.split('-').map(Number);
   const weekDays = Array.from({length: 7}, (_, i) =>
     new Date(Date.UTC(wy, wm-1, wd+i, 12)).toISOString().slice(0, 10));
-  const wDates = new Set(load(K.w).map(r => r.date));
-  const cDates = new Set(load(K.c).map(r => r.date));
-  const dotLabels = ['月','火','水','木','金','土','日'];
-  const dotsHtml = weekDays.map((d, i) => {
-    const hasW = wDates.has(d), hasC = cDates.has(d), isTd = d === today();
-    const cls = hasW && hasC ? 'has-wc' : hasW ? 'has-w' : hasC ? 'has-c' : '';
-    return `<div class="week-dot-item">
-      <div class="week-dot ${cls}${isTd?' is-today':''}"></div>
-      <div class="week-dot-label">${dotLabels[i]}</div>
-    </div>`;
-  }).join('');
   // 部位別記録頻度（今週）
   const tagData = JSON.parse(localStorage.getItem('ft_day_tags') || '{}');
   const muscleGroups = [
@@ -4509,24 +4473,18 @@ function renderHome() {
     { key:'肩', icon:'💪' }, { key:'腕', icon:'💪' }, { key:'全身', icon:'⚡' }
   ];
   const muscleFreqHtml = (() => {
-    // 今週の頻度集計
     const freq = {};
     weekDays.filter(d => tagData[d]).forEach(d => {
       (tagData[d] || []).forEach(tag => { freq[tag] = (freq[tag] || 0) + 1; });
     });
-    // 全記録から各部位の最終トレ日を取得
     const allTagDates = Object.keys(tagData).sort((a,b) => b.localeCompare(a));
     const chips = muscleGroups.map(g => {
       const f = freq[g.key] || 0;
       const lastDate = allTagDates.find(d => (tagData[d]||[]).includes(g.key));
       let cls = '', label = '';
-      if (f > 0) {
-        cls = ''; label = `×${f}`;
-      } else if (lastDate) {
-        cls = ' warn'; label = '今週未';
-      } else {
-        cls = ' zero'; label = '未記録';
-      }
+      if (f > 0) { cls = ''; label = `×${f}`; }
+      else if (lastDate) { cls = ' warn'; label = '今週未'; }
+      else { cls = ' zero'; label = '未記録'; }
       return `<span class="muscle-freq-chip${cls}">${g.icon} ${g.key} <span style="font-size:9px;opacity:.75;">${label}</span></span>`;
     }).join('');
     return `<div class="muscle-freq-row">${chips}</div>`;
@@ -4541,7 +4499,6 @@ function renderHome() {
       <div class="home-week-num">${cDays}</div>
       <div class="home-week-label">🏃 有酸素</div>
     </div>
-    <div class="week-dots-row" style="grid-column:1/-1;">${dotsHtml}</div>
     <div style="grid-column:1/-1;">${muscleFreqHtml}</div>`;
 
   // リスタートバナー & 今日のミッション
