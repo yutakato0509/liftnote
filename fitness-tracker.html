@@ -1086,6 +1086,58 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   transition: background .15s;
 }
 .pwa-banner-close:active { background: rgba(255,255,255,.15); }
+
+/* ═══════════ PWA INSTALL MODAL ═══════════ */
+.pwa-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.8);
+  backdrop-filter: blur(8px); z-index: 600;
+  display: none; align-items: flex-end; justify-content: center;
+}
+.pwa-modal-overlay.open { display: flex; }
+.pwa-modal-sheet {
+  width: 100%; max-width: 480px;
+  background: #141414; border-radius: 28px 28px 0 0;
+  padding: 24px 22px max(env(safe-area-inset-bottom,0px),28px);
+  border-top: 1px solid rgba(255,255,255,.09);
+  animation: slideUp .25s ease;
+}
+.pwa-modal-title {
+  font-size: 18px; font-weight: 900; color: #fff;
+  text-align: center; margin-bottom: 6px;
+}
+.pwa-modal-sub {
+  font-size: 12px; color: var(--sub); text-align: center;
+  margin-bottom: 24px; line-height: 1.6;
+}
+.pwa-step {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.pwa-step:last-of-type { border-bottom: none; }
+.pwa-step-num {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: #fff;
+}
+.pwa-step-icon { font-size: 26px; flex-shrink: 0; }
+.pwa-step-text { flex: 1; }
+.pwa-step-label { font-size: 13px; font-weight: 800; color: #fff; }
+.pwa-step-desc  { font-size: 11px; color: var(--sub); margin-top: 2px; line-height: 1.5; }
+.pwa-modal-btn {
+  width: 100%; padding: 15px; border-radius: 16px; margin-top: 20px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #fff; font-size: 15px; font-weight: 900;
+  cursor: pointer; font-family: inherit; -webkit-appearance: none;
+  letter-spacing: .04em; transition: opacity .15s;
+}
+.pwa-modal-btn:active { opacity: .85; }
+.pwa-modal-close-btn {
+  width: 100%; padding: 13px; border-radius: 14px; margin-top: 10px;
+  background: transparent; border: 1px solid rgba(255,255,255,.08);
+  color: var(--sub); font-size: 13px; font-weight: 800;
+  cursor: pointer; font-family: inherit; -webkit-appearance: none;
+}
 .pwa-banner-add {
   padding: 8px 14px; border-radius: 20px;
   background: linear-gradient(135deg, var(--green), #00b359);
@@ -1582,6 +1634,17 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   <button class="pwa-banner-close" onclick="closePwaBanner()" aria-label="閉じる">✕</button>
 </div>
 
+<!-- PWAインストールガイドモーダル -->
+<div class="pwa-modal-overlay" id="pwa-modal-overlay" onclick="closePwaModal(event)">
+  <div class="pwa-modal-sheet">
+    <div class="pwa-modal-title">📲 アプリとして使う</div>
+    <div class="pwa-modal-sub" id="pwa-modal-sub"></div>
+    <div id="pwa-modal-steps"></div>
+    <button class="pwa-modal-btn" id="pwa-modal-action" onclick="pwaModalAction()"></button>
+    <button class="pwa-modal-close-btn" onclick="closePwaModal()">後で</button>
+  </div>
+</div>
+
 <!-- シェアシート -->
 <div class="share-sheet-overlay" id="share-sheet-overlay" onclick="closeShareSheet(event)">
   <div class="share-sheet">
@@ -1696,6 +1759,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <button class="app-util-btn" onclick="openShareSheet()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
       シェア
+    </button>
+    <button class="app-util-btn" id="install-app-btn" onclick="openPwaModal()" style="display:none;color:var(--green);border-color:rgba(0,212,106,.25);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18" stroke-width="3"/></svg>
+      アプリ化
     </button>
     <button class="app-util-btn" onclick="shareInvite()" style="color:var(--green);border-color:rgba(0,212,106,.25);">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -2396,6 +2463,7 @@ window.addEventListener('DOMContentLoaded', () => {
   checkOnboarding();
   initNotifications();
   checkPwaBanner();
+  initInstallBtn();
   setTimeout(checkLoginPrompt, 2000);
 
   // 写真モーダル スワイプジェスチャー
@@ -3754,11 +3822,96 @@ function triggerPwaInstall() {
       if (result.outcome === 'accepted') {
         localStorage.setItem('ln_pwa_dismissed', '1');
         document.getElementById('pwa-banner').classList.remove('show');
+        closePwaModal();
         toast('🎉 ホーム画面に追加しました！');
       }
       _deferredInstallPrompt = null;
     });
   }
+}
+
+const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+function openPwaModal() {
+  const overlay = document.getElementById('pwa-modal-overlay');
+  const sub     = document.getElementById('pwa-modal-sub');
+  const steps   = document.getElementById('pwa-modal-steps');
+  const btn     = document.getElementById('pwa-modal-action');
+
+  if (_isIOS) {
+    sub.textContent = 'iPhoneのSafariから以下の手順でホーム画面に追加できます。';
+    steps.innerHTML = `
+      <div class="pwa-step">
+        <div class="pwa-step-num">1</div>
+        <div class="pwa-step-icon">🧭</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">Safariで開く</div>
+          <div class="pwa-step-desc">このページをSafariブラウザで開いてください<br>（ChromeではPWA追加できません）</div>
+        </div>
+      </div>
+      <div class="pwa-step">
+        <div class="pwa-step-num">2</div>
+        <div class="pwa-step-icon">⬆️</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">共有ボタンをタップ</div>
+          <div class="pwa-step-desc">画面下部の中央にある四角↑ボタン</div>
+        </div>
+      </div>
+      <div class="pwa-step">
+        <div class="pwa-step-num">3</div>
+        <div class="pwa-step-icon">➕</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">「ホーム画面に追加」を選択</div>
+          <div class="pwa-step-desc">リストをスクロールして「ホーム画面に追加」をタップ</div>
+        </div>
+      </div>`;
+    btn.textContent = 'Safariで開く';
+  } else {
+    sub.textContent = 'ホーム画面に追加すると、アプリのようにすぐ起動できます。';
+    steps.innerHTML = `
+      <div class="pwa-step">
+        <div class="pwa-step-num">1</div>
+        <div class="pwa-step-icon">📲</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">下の「ホーム画面に追加」をタップ</div>
+          <div class="pwa-step-desc">インストールの確認ダイアログが表示されます</div>
+        </div>
+      </div>
+      <div class="pwa-step">
+        <div class="pwa-step-num">2</div>
+        <div class="pwa-step-icon">✅</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">「追加」をタップ</div>
+          <div class="pwa-step-desc">次回からはホーム画面のアイコンから起動</div>
+        </div>
+      </div>`;
+    btn.textContent = _deferredInstallPrompt ? 'ホーム画面に追加' : 'メニューから「ホーム画面に追加」';
+    btn.disabled = !_deferredInstallPrompt;
+    btn.style.opacity = _deferredInstallPrompt ? '1' : '0.5';
+  }
+  overlay.classList.add('open');
+}
+
+function closePwaModal(e) {
+  if (e && e.target !== document.getElementById('pwa-modal-overlay')) return;
+  document.getElementById('pwa-modal-overlay').classList.remove('open');
+}
+
+function pwaModalAction() {
+  if (_isIOS) {
+    // SafariのURLをコピーしてガイドを表示
+    closePwaModal();
+    toast('📋 SafariでこのページのURLを開いてください');
+  } else {
+    triggerPwaInstall();
+  }
+}
+
+function initInstallBtn() {
+  if (_isStandalone) return; // すでにインストール済み
+  const btn = document.getElementById('install-app-btn');
+  if (btn) btn.style.display = 'inline-flex';
 }
 
 /* ─────────────────────────────────────────
