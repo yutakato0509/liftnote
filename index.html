@@ -302,10 +302,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 
 .btn-ghost {
   background: transparent; border: 1px solid #2a2a2a;
-  color: var(--sub); font-size: 11px; padding: 7px 13px;
+  color: var(--sub); font-size: 11px; padding: 0 13px;
   border-radius: 8px; width: auto; font-weight: 700;
   text-transform: uppercase; letter-spacing: .04em;
   transition: all .18s;
+  min-height: 36px; min-width: 48px; display: inline-flex; align-items: center; justify-content: center;
 }
 .btn-ghost:active { background: rgba(255,59,48,.12); border-color: var(--red); color: var(--red); }
 
@@ -563,12 +564,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .btn-cancel:active { background: rgba(255,59,48,.1); border-color: var(--red); color: var(--red); }
 
 /* ═══════════ EDIT BUTTON ═══════════ */
-.rec-actions { display: flex; gap: 5px; }
+.rec-actions { display: flex; gap: 8px; align-items: center; }
 .btn-edit {
   background: rgba(255,85,0,.08); border: 1px solid rgba(255,85,0,.2);
-  color: var(--accent); font-size: 11px; padding: 7px 11px; border-radius: 8px;
+  color: var(--accent); font-size: 11px; padding: 0 13px; border-radius: 8px;
   font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   cursor: pointer; -webkit-appearance: none; font-family: inherit; transition: background .15s;
+  min-height: 36px; min-width: 48px; display: inline-flex; align-items: center; justify-content: center;
 }
 .btn-edit:active { background: rgba(255,85,0,.2); }
 
@@ -1084,6 +1086,58 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   transition: background .15s;
 }
 .pwa-banner-close:active { background: rgba(255,255,255,.15); }
+
+/* ═══════════ PWA INSTALL MODAL ═══════════ */
+.pwa-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.8);
+  backdrop-filter: blur(8px); z-index: 600;
+  display: none; align-items: flex-end; justify-content: center;
+}
+.pwa-modal-overlay.open { display: flex; }
+.pwa-modal-sheet {
+  width: 100%; max-width: 480px;
+  background: #141414; border-radius: 28px 28px 0 0;
+  padding: 24px 22px max(env(safe-area-inset-bottom,0px),28px);
+  border-top: 1px solid rgba(255,255,255,.09);
+  animation: slideUp .25s ease;
+}
+.pwa-modal-title {
+  font-size: 18px; font-weight: 900; color: #fff;
+  text-align: center; margin-bottom: 6px;
+}
+.pwa-modal-sub {
+  font-size: 12px; color: var(--sub); text-align: center;
+  margin-bottom: 24px; line-height: 1.6;
+}
+.pwa-step {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.pwa-step:last-of-type { border-bottom: none; }
+.pwa-step-num {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: #fff;
+}
+.pwa-step-icon { font-size: 26px; flex-shrink: 0; }
+.pwa-step-text { flex: 1; }
+.pwa-step-label { font-size: 13px; font-weight: 800; color: #fff; }
+.pwa-step-desc  { font-size: 11px; color: var(--sub); margin-top: 2px; line-height: 1.5; }
+.pwa-modal-btn {
+  width: 100%; padding: 15px; border-radius: 16px; margin-top: 20px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #fff; font-size: 15px; font-weight: 900;
+  cursor: pointer; font-family: inherit; -webkit-appearance: none;
+  letter-spacing: .04em; transition: opacity .15s;
+}
+.pwa-modal-btn:active { opacity: .85; }
+.pwa-modal-close-btn {
+  width: 100%; padding: 13px; border-radius: 14px; margin-top: 10px;
+  background: transparent; border: 1px solid rgba(255,255,255,.08);
+  color: var(--sub); font-size: 13px; font-weight: 800;
+  cursor: pointer; font-family: inherit; -webkit-appearance: none;
+}
 .pwa-banner-add {
   padding: 8px 14px; border-radius: 20px;
   background: linear-gradient(135deg, var(--green), #00b359);
@@ -1580,11 +1634,22 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   <button class="pwa-banner-close" onclick="closePwaBanner()" aria-label="閉じる">✕</button>
 </div>
 
+<!-- PWAインストールガイドモーダル -->
+<div class="pwa-modal-overlay" id="pwa-modal-overlay" onclick="closePwaModal(event)">
+  <div class="pwa-modal-sheet">
+    <div class="pwa-modal-title">📲 アプリとして使う</div>
+    <div class="pwa-modal-sub" id="pwa-modal-sub"></div>
+    <div id="pwa-modal-steps"></div>
+    <button class="pwa-modal-btn" id="pwa-modal-action" onclick="pwaModalAction()"></button>
+    <button class="pwa-modal-close-btn" onclick="closePwaModal()">後で</button>
+  </div>
+</div>
+
 <!-- シェアシート -->
 <div class="share-sheet-overlay" id="share-sheet-overlay" onclick="closeShareSheet(event)">
   <div class="share-sheet">
     <div class="share-sheet-title">友達にシェア</div>
-    <div class="share-sheet-url">https://yutakato0509.github.io/liftnote</div>
+    <div class="share-sheet-url">https://liftnote.pages.dev</div>
     <div class="share-btns">
       <button class="share-btn-item" onclick="shareAction('copy')">
         <span class="share-icon">📋</span>
@@ -1616,6 +1681,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       <div class="notif-banner-sub">24時間サボったら通知で背中を押します</div>
     </div>
     <button class="notif-banner-btn" onclick="requestNotifPermission()">ON にする</button>
+    <button class="notif-banner-btn" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);color:var(--sub);margin-left:4px;" onclick="snoozeNotifBanner()">後で</button>
     <button class="notif-banner-close" onclick="dismissNotifBanner()">✕</button>
   </div>
 
@@ -1625,7 +1691,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div class="restart-icon">🔥</div>
     <div>
       <div class="restart-title">お帰り！<span id="restart-days"></span>ぶりだね</div>
-      <div class="restart-sub">今日、1種目だけやろう →</div>
+      <div class="restart-sub" id="restart-sub">習慣を取り戻そう。今日1種目だけやろう →</div>
     </div>
   </div>
 
@@ -1694,6 +1760,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
       シェア
     </button>
+    <button class="app-util-btn" id="install-app-btn" onclick="openPwaModal()" style="display:none;color:var(--green);border-color:rgba(0,212,106,.25);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18" stroke-width="3"/></svg>
+      アプリ化
+    </button>
     <button class="app-util-btn" onclick="shareInvite()" style="color:var(--green);border-color:rgba(0,212,106,.25);">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       友達に紹介
@@ -1711,6 +1781,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       ログイン
     </button>
     <div class="user-avatar app-util-avatar" id="user-avatar" onclick="openUserMenu()" style="display:none;"></div>
+  </div>
+  <div style="text-align:center;padding:4px 0 8px;">
+    <a href="/privacy.html" target="_blank" rel="noopener" style="font-size:10px;color:var(--sub);text-decoration:none;letter-spacing:.04em;">プライバシーポリシー</a>
   </div>
 </div>
 
@@ -1899,6 +1972,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
              onchange="onPhotoSelected(this)">
     </div>
     <div id="photo-grid"></div>
+    <button id="photo-recover-btn" onclick="photoManualRecover()" style="display:none;width:100%;margin-top:8px;padding:11px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--sub);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;-webkit-appearance:none;letter-spacing:.04em;">
+      ☁️ クラウドから再読み込み
+    </button>
   </div>
 </div>
 
@@ -1941,6 +2017,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
         <button class="period-btn" onclick="setPeriodEx('1m',this)">1ヶ月</button>
         <button class="period-btn" onclick="setPeriodEx('3m',this)">3ヶ月</button>
         <button class="period-btn active" onclick="setPeriodEx('all',this)">全期間</button>
+      </div>
+      <div class="period-group" style="margin-top:8px;margin-bottom:0;">
+        <button class="period-btn active" id="ex-metric-maxw" onclick="setExMetric('maxw',this)">最大重量</button>
+        <button class="period-btn" id="ex-metric-volume" onclick="setExMetric('volume',this)">Volume</button>
+        <button class="period-btn" id="ex-metric-reps" onclick="setExMetric('reps',this)">Avg Reps</button>
       </div>
     </div>
     <div class="card" id="ex-chart-card" style="display:none;">
@@ -2320,13 +2401,20 @@ function toast(msg) {
   el.classList.add('show');
   _toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
+let _countdownInterval = null;
 function toastUndo() {
   clearTimeout(_toastTimer);
   clearTimeout(_deleteTimer);
+  clearInterval(_countdownInterval);
   const el = document.getElementById('toast');
-  el.innerHTML = '🗑️ 削除しました <button class="undo-btn" onclick="undoDelete()">元に戻す</button>';
+  let remaining = 8;
+  const render = () => {
+    el.innerHTML = `🗑️ 削除しました <button class="undo-btn" onclick="undoDelete()">元に戻す</button> <span style="font-size:10px;color:var(--sub);margin-left:4px;">${remaining}s</span>`;
+  };
+  render();
   el.classList.add('show');
-  _deleteTimer = setTimeout(() => { el.classList.remove('show'); _deletedRecord = null; }, 8000);
+  _countdownInterval = setInterval(() => { remaining--; if (remaining > 0) render(); else clearInterval(_countdownInterval); }, 1000);
+  _deleteTimer = setTimeout(() => { el.classList.remove('show'); _deletedRecord = null; clearInterval(_countdownInterval); }, 8000);
 }
 
 /* ─────────────────────────────────────────
@@ -2375,6 +2463,7 @@ window.addEventListener('DOMContentLoaded', () => {
   checkOnboarding();
   initNotifications();
   checkPwaBanner();
+  initInstallBtn();
   setTimeout(checkLoginPrompt, 2000);
 
   // 写真モーダル スワイプジェスチャー
@@ -2601,31 +2690,29 @@ function saveWeight() {
   if (!editingId.w) setTimeout(() => checkBadges(), 600);
   // 次の種目をすぐ入力できるようフォーカス
   setTimeout(() => { const ex = document.getElementById('w-exercise'); if (ex) ex.focus(); }, 80);
-  // ORDER-02: 2段階トースト（今日N種目目 + 前回比）
+  // 1本トースト（今日N種目目 + 前回比を統合）
   if (isNewRecord) {
-    setTimeout(() => {
-      const todayCount = load(K.w).filter(r => r.date === date).length;
-      if (prevRecord) {
-        const newMaxW  = Math.max(...setData.map(s => s.weight||0));
-        const prevMaxW = Math.max(...(prevRecord.setData||[{weight:prevRecord.weight||0}]).map(s=>s.weight||0));
-        const diff = newMaxW - prevMaxW;
-        const diffStr = diff > 0 ? `+${diff}kg 📈` : diff < 0 ? `${diff}kg 📉` : '±0kg';
-        toast(`今日 ${todayCount}種目目！ | 前回比 ${diffStr}`);
-      } else {
-        toast(`今日 ${todayCount}種目目！ | 続けて記録しよう 💪`);
-      }
-    }, 900);
+    const todayCount = load(K.w).filter(r => r.date === date).length;
+    if (prevRecord) {
+      const newMaxW  = Math.max(...setData.map(s => s.weight||0));
+      const prevMaxW = Math.max(...(prevRecord.setData||[{weight:prevRecord.weight||0}]).map(s=>s.weight||0));
+      const diff = newMaxW - prevMaxW;
+      const diffStr = diff > 0 ? `+${diff}kg 📈` : diff < 0 ? `${diff}kg 📉` : '±0kg';
+      toast(`🎉 記録！今日${todayCount}種目 | 前回比 ${diffStr}`);
+    } else {
+      toast(`🎉 記録！今日${todayCount}種目 | 続けて記録しよう 💪`);
+    }
   }
-  // Layer 2: 前回記録との比較シートを表示
+  // 前回記録との比較シートを表示
   if (isNewRecord && prevRecord) {
-    setTimeout(() => showSaveComparison(exercise, setData, prevRecord), 1800);
+    setTimeout(() => showSaveComparison(exercise, setData, prevRecord), 1000);
   }
 }
 
 function renderWRecent() {
   const all = sortDesc(load(K.w));
   const el  = document.getElementById('w-recent');
-  if (!all.length) { el.innerHTML = emptyHTML('🏋️','NO RECORDS YET'); return; }
+  if (!all.length) { el.innerHTML = emptyHTML('🏋️','NO RECORDS YET', false); return; }
 
   // PR計算
   const prMap = {};
@@ -2736,7 +2823,7 @@ function saveCardio() {
 function renderCRecent() {
   const all = sortDesc(load(K.c));
   const el  = document.getElementById('c-recent');
-  if (!all.length) { el.innerHTML = emptyHTML('🏃','NO RECORDS YET'); return; }
+  if (!all.length) { el.innerHTML = emptyHTML('🏃','NO RECORDS YET', false); return; }
 
   const dateMap = {}, dates = [];
   all.forEach(r => {
@@ -2842,7 +2929,7 @@ function renderBRecent() {
   }
 
   const el = document.getElementById('b-recent');
-  if (!recs.length) { el.innerHTML = emptyHTML('⚖️','NO RECORDS YET'); return; }
+  if (!recs.length) { el.innerHTML = emptyHTML('⚖️','NO RECORDS YET', false); return; }
 
   el.innerHTML = recs.map(r => `
     <div class="rec-card">
@@ -2886,7 +2973,7 @@ function renderHistory() {
   all.sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 
   const el = document.getElementById('hist-list');
-  if (!all.length) { el.innerHTML = emptyHTML('📋','NO RECORDS YET'); return; }
+  if (!all.length) { el.innerHTML = emptyHTML('📋','NO RECORDS YET', false); return; }
 
   const grouped = {};
   all.forEach(r => { (grouped[r.date] = grouped[r.date]||[]).push(r); });
@@ -3161,6 +3248,13 @@ function fillExSel() {
   if (selected) drawExChart();
 }
 
+let exMetric = 'maxw'; // 'maxw' | 'volume' | 'reps'
+function setExMetric(m, btn) {
+  exMetric = m;
+  document.querySelectorAll('#ex-metric-maxw, #ex-metric-volume, #ex-metric-reps').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  drawExChart();
+}
 function drawExChart() {
   if (typeof Chart === 'undefined') return;
   if (exChart) { exChart.destroy(); exChart = null; }
@@ -3168,15 +3262,28 @@ function drawExChart() {
   const card     = document.getElementById('ex-chart-card');
   if (!exercise) { card.style.display='none'; return; }
 
+  const metricLabels = { maxw: 'MAX WEIGHT TREND', volume: 'VOLUME TREND (kg×reps×sets)', reps: 'AVG REPS TREND' };
+  const metricUnits  = { maxw: 'kg', volume: 'kg', reps: 'reps' };
   card.style.display = 'block';
-  document.getElementById('ex-chart-label').textContent = `${exercise} — MAX WEIGHT TREND`;
+  document.getElementById('ex-chart-label').textContent = `${exercise} — ${metricLabels[exMetric] || 'MAX WEIGHT TREND'}`;
 
   const all  = load(K.w).filter(r => r.exercise === exercise);
   const recs = filterByPeriod(all, graphPeriod.ex);
   const byDate = {};
   recs.forEach(r => {
-    const maxW = r.setData ? Math.max(...r.setData.map(s => s.weight || 0)) : (r.weight || 0);
-    if (!byDate[r.date] || maxW > byDate[r.date]) byDate[r.date] = maxW;
+    const sets = r.setData || [{ weight: r.weight||0, reps: r.reps||0 }];
+    let val;
+    if (exMetric === 'volume') {
+      val = sets.reduce((s, x) => s + (x.weight||0) * (x.reps||0), 0);
+      if (!byDate[r.date]) byDate[r.date] = 0;
+      byDate[r.date] += val;
+    } else if (exMetric === 'reps') {
+      val = sets.reduce((s, x) => s + (x.reps||0), 0) / sets.length;
+      if (!byDate[r.date] || val > byDate[r.date]) byDate[r.date] = Math.round(val * 10) / 10;
+    } else {
+      val = Math.max(...sets.map(s => s.weight||0));
+      if (!byDate[r.date] || val > byDate[r.date]) byDate[r.date] = val;
+    }
   });
   const dates  = Object.keys(byDate).sort((a,b)=>a.localeCompare(b));
   const canvas = resetChartWrap('ex-chart-wrap','ex-chart');
@@ -3192,7 +3299,7 @@ function drawExChart() {
     data: {
       labels: dates.map(fmtDateShort),
       datasets: [{
-        label: '最大重量',
+        label: metricLabels[exMetric],
         data:  dates.map(d => byDate[d]),
         borderColor: '#ff5500',
         backgroundColor: (ctx) => {
@@ -3208,7 +3315,7 @@ function drawExChart() {
         borderWidth: 2.5,
       }]
     },
-    options: chartOpts('kg')
+    options: chartOpts(metricUnits[exMetric] || 'kg')
   });
 }
 
@@ -3222,8 +3329,8 @@ function renderCalendar() {
   if (!calYear) { calYear = now.getUTCFullYear(); calMonth = now.getUTCMonth(); }
   _drawCalendar();
 }
-function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } _drawCalendar(); }
-function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } _drawCalendar(); }
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } calSelected = null; _drawCalendar(); }
+function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } calSelected = null; _drawCalendar(); }
 
 function _drawCalendar() {
   const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
@@ -3540,7 +3647,7 @@ function tagBadgesHTML(tags) {
 /* ─────────────────────────────────────────
    SHARE
 ───────────────────────────────────────── */
-const SHARE_URL  = 'https://yutakato0509.github.io/liftnote';
+const SHARE_URL  = 'https://liftnote.pages.dev';
 const SHARE_TEXT = '🔥 LiftNote — テクノロジー×筋肉で習慣をハック。無料・インストール不要の筋トレ記録アプリ！\n#LiftNote #筋トレ #個人開発';
 
 function openShareSheet() {
@@ -3623,9 +3730,9 @@ function sharePrModal() {
   const { exercise, newRM, diffRM } = _prModalData;
   const text = `🏆 NEW PR！\n${exercise} 推定1RM ${newRM}kg${diffRM>0?` (+${diffRM}kg)`:''}🔥\n\nLiftNoteで記録中 #LiftNote #筋トレ #${exercise.replace(/\s/g,'')}`;
   if (navigator.share) {
-    navigator.share({ title:'LiftNote PR更新！', text, url:'https://yutakato0509.github.io/liftnote' }).catch(()=>{});
+    navigator.share({ title:'LiftNote PR更新！', text, url:'https://liftnote.pages.dev' }).catch(()=>{});
   } else {
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://yutakato0509.github.io/liftnote')}`, '_blank');
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent('https://liftnote.pages.dev')}`, '_blank');
   }
   closePrModal();
 }
@@ -3655,7 +3762,7 @@ function closeLoginPrompt() {
 /* 友達に紹介（Web Share API） */
 function shareInvite() {
   const text = '筋トレ記録アプリ LiftNote を使ってみて！';
-  const url  = 'https://yutakato0509.github.io/liftnote';
+  const url  = 'https://liftnote.pages.dev';
   if (navigator.share) {
     navigator.share({ title: 'LiftNote', text, url }).catch(() => {});
   } else {
@@ -3715,11 +3822,96 @@ function triggerPwaInstall() {
       if (result.outcome === 'accepted') {
         localStorage.setItem('ln_pwa_dismissed', '1');
         document.getElementById('pwa-banner').classList.remove('show');
+        closePwaModal();
         toast('🎉 ホーム画面に追加しました！');
       }
       _deferredInstallPrompt = null;
     });
   }
+}
+
+const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+function openPwaModal() {
+  const overlay = document.getElementById('pwa-modal-overlay');
+  const sub     = document.getElementById('pwa-modal-sub');
+  const steps   = document.getElementById('pwa-modal-steps');
+  const btn     = document.getElementById('pwa-modal-action');
+
+  if (_isIOS) {
+    sub.textContent = 'iPhoneのSafariから以下の手順でホーム画面に追加できます。';
+    steps.innerHTML = `
+      <div class="pwa-step">
+        <div class="pwa-step-num">1</div>
+        <div class="pwa-step-icon">🧭</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">Safariで開く</div>
+          <div class="pwa-step-desc">このページをSafariブラウザで開いてください<br>（ChromeではPWA追加できません）</div>
+        </div>
+      </div>
+      <div class="pwa-step">
+        <div class="pwa-step-num">2</div>
+        <div class="pwa-step-icon">⬆️</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">共有ボタンをタップ</div>
+          <div class="pwa-step-desc">画面下部の中央にある四角↑ボタン</div>
+        </div>
+      </div>
+      <div class="pwa-step">
+        <div class="pwa-step-num">3</div>
+        <div class="pwa-step-icon">➕</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">「ホーム画面に追加」を選択</div>
+          <div class="pwa-step-desc">リストをスクロールして「ホーム画面に追加」をタップ</div>
+        </div>
+      </div>`;
+    btn.textContent = 'Safariで開く';
+  } else {
+    sub.textContent = 'ホーム画面に追加すると、アプリのようにすぐ起動できます。';
+    steps.innerHTML = `
+      <div class="pwa-step">
+        <div class="pwa-step-num">1</div>
+        <div class="pwa-step-icon">📲</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">下の「ホーム画面に追加」をタップ</div>
+          <div class="pwa-step-desc">インストールの確認ダイアログが表示されます</div>
+        </div>
+      </div>
+      <div class="pwa-step">
+        <div class="pwa-step-num">2</div>
+        <div class="pwa-step-icon">✅</div>
+        <div class="pwa-step-text">
+          <div class="pwa-step-label">「追加」をタップ</div>
+          <div class="pwa-step-desc">次回からはホーム画面のアイコンから起動</div>
+        </div>
+      </div>`;
+    btn.textContent = _deferredInstallPrompt ? 'ホーム画面に追加' : 'メニューから「ホーム画面に追加」';
+    btn.disabled = !_deferredInstallPrompt;
+    btn.style.opacity = _deferredInstallPrompt ? '1' : '0.5';
+  }
+  overlay.classList.add('open');
+}
+
+function closePwaModal(e) {
+  if (e && e.target !== document.getElementById('pwa-modal-overlay')) return;
+  document.getElementById('pwa-modal-overlay').classList.remove('open');
+}
+
+function pwaModalAction() {
+  if (_isIOS) {
+    // SafariのURLをコピーしてガイドを表示
+    closePwaModal();
+    toast('📋 SafariでこのページのURLを開いてください');
+  } else {
+    triggerPwaInstall();
+  }
+}
+
+function initInstallBtn() {
+  if (_isStandalone) return; // すでにインストール済み
+  const btn = document.getElementById('install-app-btn');
+  if (btn) btn.style.display = 'inline-flex';
 }
 
 /* ─────────────────────────────────────────
@@ -3882,6 +4074,7 @@ function checkNotifBanner() {
   }
   if (Notification.permission === 'denied') return;
   if (localStorage.getItem('ft_notif_dismissed')) return;
+  if (sessionStorage.getItem('ft_notif_snoozed')) return;
   // 3件以上記録があればバナー表示
   const total = load(K.w).length + load(K.c).length;
   if (total < 3) return;
@@ -3891,6 +4084,10 @@ function checkNotifBanner() {
 function dismissNotifBanner() {
   document.getElementById('notif-banner').classList.remove('show');
   localStorage.setItem('ft_notif_dismissed', '1');
+}
+function snoozeNotifBanner() {
+  document.getElementById('notif-banner').classList.remove('show');
+  sessionStorage.setItem('ft_notif_snoozed', '1');
 }
 
 async function requestNotifPermission() {
@@ -3924,8 +4121,8 @@ function fireReminderIfNeeded() {
     navigator.serviceWorker.ready.then(reg => {
       reg.showNotification(m.title, {
         body: m.body,
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
+        icon: 'icons/icon-192.png',
+        badge: 'icons/icon-192.png',
         tag: 'liftnote-reminder',
         renotify: false,
       });
@@ -4050,6 +4247,7 @@ function delRec(key, id, cb) {
 function undoDelete() {
   if (!_deletedRecord) return;
   clearTimeout(_deleteTimer);
+  clearInterval(_countdownInterval);
   const { key, record, cb } = _deletedRecord;
   _deletedRecord = null;
   const arr = load(key);
@@ -4063,8 +4261,9 @@ function undoDelete() {
 /* ─────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────── */
-function emptyHTML(icon, msg) {
-  return `<div class="empty"><span class="ei">${icon}</span><p>${msg}</p></div>`;
+function emptyHTML(icon, msg, showCta = true) {
+  const cta = showCta ? `<button onclick="nav('record',document.querySelectorAll('.nav-item')[1])" style="margin-top:14px;padding:10px 24px;border-radius:20px;border:1px solid rgba(255,85,0,.4);background:rgba(255,85,0,.1);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.05em;font-family:inherit;-webkit-appearance:none;">記録する →</button>` : '';
+  return `<div class="empty"><span class="ei">${icon}</span><p>${msg}</p>${cta}</div>`;
 }
 function esc(s) {
   return String(s)
@@ -4143,10 +4342,40 @@ async function getCloudPhotos() {
 }
 async function savePhotoMeta(meta) {
   if (!fbDb || !fbAuth || !fbAuth.currentUser) return;
-  await fbDb.collection('users').doc(fbAuth.currentUser.uid).set(
+  const save = () => fbDb.collection('users').doc(fbAuth.currentUser.uid).set(
     { photos: firebase.firestore.FieldValue.arrayUnion(meta) },
     { merge: true }
   );
+  try {
+    await save();
+  } catch(e) {
+    console.warn('savePhotoMeta retry:', e);
+    await new Promise(r => setTimeout(r, 2000));
+    await save(); // 1回リトライ
+  }
+}
+
+// Storage孤立写真をFirestoreへ復元
+async function recoverPhotosFromStorage() {
+  if (!fbStorage || !fbAuth || !fbAuth.currentUser) return 0;
+  const uid = fbAuth.currentUser.uid;
+  try {
+    const [listResult, cloudMetas] = await Promise.all([
+      fbStorage.ref(`photos/${uid}`).listAll(),
+      getCloudPhotos()
+    ]);
+    const cloudIds = new Set(cloudMetas.map(m => m.id));
+    let recovered = 0;
+    for (const item of listResult.items) {
+      const id = item.name.replace('.jpg', '');
+      if (cloudIds.has(id)) continue;
+      const [storageUrl, meta] = await Promise.all([item.getDownloadURL(), item.getMetadata()]);
+      const date = meta.timeCreated ? meta.timeCreated.slice(0, 10) : today();
+      await savePhotoMeta({ id, date, storageUrl, createdAt: new Date(meta.timeCreated).getTime() });
+      recovered++;
+    }
+    return recovered;
+  } catch(e) { console.error('recoverPhotosFromStorage:', e); return 0; }
 }
 
 // オフライン中に撮った写真をStorageへアップロード
@@ -4199,6 +4428,10 @@ async function onPhotoSelected(input) {
 async function renderPhotoGrid() {
   const el = document.getElementById('photo-grid');
   if (!el) return;
+  // ログイン済みかつ空の場合はローディング表示
+  if (fbAuth && fbAuth.currentUser && !el.querySelector('.photo-thumb')) {
+    el.innerHTML = '<div style="text-align:center;padding:32px 0;color:var(--sub);font-size:13px;letter-spacing:.04em;">📷 読み込み中...</div>';
+  }
   const [localPhotos, cloudMetas] = await Promise.all([dbAll(), getCloudPhotos()]);
 
   // ローカルとクラウドをIDでマージ（storageUrl優先）
@@ -4213,7 +4446,7 @@ async function renderPhotoGrid() {
   photoCache = {};
   photos.forEach(p => { photoCache[p.id] = { src: p.src, date: p.date, storageUrl: p.storageUrl }; });
 
-  if (!photos.length) { el.innerHTML = emptyHTML('📷','NO PHOTOS YET'); return; }
+  if (!photos.length) { el.innerHTML = emptyHTML('📷','NO PHOTOS YET', false); return; }
   photos.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt||0) - (a.createdAt||0));
   const grouped = {};
   photos.forEach(p => { (grouped[p.date] = grouped[p.date] || []).push(p); });
@@ -4296,9 +4529,15 @@ async function deletePhoto(id) {
   await dbDel(id);
   clearTimeout(_toastTimer);
   clearTimeout(_deleteTimer);
+  clearInterval(_countdownInterval);
   const el = document.getElementById('toast');
-  el.innerHTML = '🗑️ 写真を削除しました <button class="undo-btn" onclick="undoDeletePhoto()">元に戻す</button>';
+  let remaining = 8;
+  const renderPhoto = () => {
+    el.innerHTML = `🗑️ 写真を削除しました <button class="undo-btn" onclick="undoDeletePhoto()">元に戻す</button> <span style="font-size:10px;color:var(--sub);margin-left:4px;">${remaining}s</span>`;
+  };
+  renderPhoto();
   el.classList.add('show');
+  _countdownInterval = setInterval(() => { remaining--; if (remaining > 0) renderPhoto(); else clearInterval(_countdownInterval); }, 1000);
   _deleteTimer = setTimeout(async () => {
     el.classList.remove('show');
     if (!_deletedPhoto) return;
@@ -4465,14 +4704,20 @@ function renderHome() {
 
   // ストリーク
   ['w','c'].forEach(type => {
-    const el  = document.getElementById(`home-${type}-streak`);
-    const n   = calcStreak(load(type === 'w' ? K.w : K.c));
-    const lbl = type === 'w' ? '💪 ウエイト' : '🏃 有酸素';
+    const el   = document.getElementById(`home-${type}-streak`);
+    const recs = load(type === 'w' ? K.w : K.c);
+    const n    = calcStreak(recs);
+    const days = calcDayStreak(recs);
+    const lbl  = type === 'w' ? '💪 ウエイト' : '🏃 有酸素';
     const numHtml = n === 0
       ? `<div class="home-streak-mini-num" style="font-size:22px;line-height:1.4;">今日から！</div>`
-      : `<div class="home-streak-mini-num">${n}</div>`;
+      : `<div class="home-streak-mini-num">${n}<span style="font-size:12px;font-weight:700;color:var(--sub);margin-left:2px;">週</span></div>`;
+    const daysHtml = days > 0
+      ? `<div style="font-size:10px;font-weight:800;color:var(--accent);margin-top:2px;letter-spacing:.04em;">🔥 ${days}日連続</div>`
+      : '';
     el.innerHTML = `
       ${numHtml}
+      ${daysHtml}
       <div class="home-streak-mini-label">${lbl} / 週連続</div>
       <div class="home-streak-mini-msg">${streakMsg(n, type)}</div>`;
   });
@@ -4579,6 +4824,20 @@ function calcStreak(records) {
   }
   return streak;
 }
+function calcDayStreak(records) {
+  if (!records.length) return 0;
+  const dates = new Set(records.map(r => r.date));
+  const t = today();
+  const [ty, tm, td] = t.split('-').map(Number);
+  let streak = 0;
+  for (let i = 0; i < 3650; i++) {
+    const dt = new Date(Date.UTC(ty, tm - 1, td - i, 12));
+    const ds = dt.toISOString().slice(0, 10);
+    if (dates.has(ds)) { streak++; }
+    else { if (i === 0) continue; break; }
+  }
+  return streak;
+}
 
 function streakMsg(n, type) {
   const label = type === 'w' ? 'ウエイト' : '有酸素';
@@ -4652,6 +4911,17 @@ function showAuthBtn() {
   document.getElementById('auth-btn').style.display    = 'block';
   document.getElementById('user-avatar').style.display = 'none';
   document.getElementById('sync-icon').style.display   = 'none';
+  const rb = document.getElementById('photo-recover-btn');
+  if (rb) rb.style.display = 'none';
+}
+
+async function photoManualRecover() {
+  const btn = document.getElementById('photo-recover-btn');
+  if (btn) btn.textContent = '☁️ 読み込み中...';
+  const recovered = await recoverPhotosFromStorage();
+  await renderPhotoGrid();
+  if (btn) btn.textContent = '☁️ クラウドから再読み込み';
+  toast(recovered > 0 ? `📷 ${recovered}枚の写真を復元しました` : '☁️ 最新の状態に更新しました');
 }
 
 function showUserUI(user) {
@@ -4662,6 +4932,8 @@ function showUserUI(user) {
   av.innerHTML = user.photoURL
     ? `<img src="${esc(user.photoURL)}" alt="">`
     : esc((user.displayName || user.email || '?')[0].toUpperCase());
+  const rb = document.getElementById('photo-recover-btn');
+  if (rb) rb.style.display = 'block';
 }
 
 function signInWithGoogle() {
@@ -4750,6 +5022,9 @@ async function pullFromFirestore(uid) {
     renderWRecent(); renderCRecent(); renderBRecent(); renderHome();
     // オフライン中に撮った写真をStorageへ同期
     await syncLocalPhotos();
+    // Firestoreメタデータが欠落している孤立写真をStorageから復元
+    const recovered = await recoverPhotosFromStorage();
+    if (recovered > 0) toast(`📷 ${recovered}枚の写真を復元しました`);
     renderPhotoGrid();
     setSyncState('ok');
     toast('☁️ データを同期しました');
@@ -4848,12 +5123,23 @@ function renderMonthlySummary() {
   const monthStart = `${ty}-${String(tm).padStart(2,'0')}-01`;
   const monthEnd   = `${ty}-${String(tm).padStart(2,'0')}-31`;
 
+  // 先月の範囲
+  const pmDate = new Date(Date.UTC(ty, tm - 2, 1, 12));
+  const prevMonthStart = `${pmDate.getUTCFullYear()}-${String(pmDate.getUTCMonth()+1).padStart(2,'0')}-01`;
+  const prevMonthEnd   = `${pmDate.getUTCFullYear()}-${String(pmDate.getUTCMonth()+1).padStart(2,'0')}-31`;
+
   const wAll = load(K.w).filter(r => r.date >= monthStart && r.date <= monthEnd);
   const cAll = load(K.c).filter(r => r.date >= monthStart && r.date <= monthEnd);
   const bAll = load(K.b).filter(r => r.date >= monthStart && r.date <= monthEnd);
+  const wPrev = load(K.w).filter(r => r.date >= prevMonthStart && r.date <= prevMonthEnd);
+  const cPrev = load(K.c).filter(r => r.date >= prevMonthStart && r.date <= prevMonthEnd);
 
   const wDays = new Set(wAll.map(r => r.date)).size;
   const cDays = new Set(cAll.map(r => r.date)).size;
+  const wDaysPrev = new Set(wPrev.map(r => r.date)).size;
+  const cDaysPrev = new Set(cPrev.map(r => r.date)).size;
+  const wDiff = wDays - wDaysPrev, cDiff = cDays - cDaysPrev;
+  const diffStr = (n) => n === 0 ? '' : n > 0 ? `<span style="font-size:9px;color:var(--green);font-weight:800;margin-left:4px;">▲${n}</span>` : `<span style="font-size:9px;color:var(--red);font-weight:800;margin-left:4px;">▼${Math.abs(n)}</span>`;
 
   // 今月の最高1RM
   let bestRM = 0, bestEx = '';
@@ -4882,12 +5168,14 @@ function renderMonthlySummary() {
     <div style="font-size:10px;color:var(--sub);font-weight:700;letter-spacing:.06em;margin-bottom:10px;text-transform:uppercase;">${mnLabel}</div>
     <div class="monthly-grid">
       <div class="monthly-item">
-        <div class="monthly-num">${wDays}</div>
+        <div class="monthly-num">${wDays}${diffStr(wDiff)}</div>
         <div class="monthly-label">💪 ウエイト日数</div>
+        ${wDaysPrev > 0 ? `<div style="font-size:9px;color:var(--sub);margin-top:3px;">先月 ${wDaysPrev}日</div>` : ''}
       </div>
       <div class="monthly-item">
-        <div class="monthly-num green">${cDays}</div>
+        <div class="monthly-num green">${cDays}${diffStr(cDiff)}</div>
         <div class="monthly-label">🏃 有酸素日数</div>
+        ${cDaysPrev > 0 ? `<div style="font-size:9px;color:var(--sub);margin-top:3px;">先月 ${cDaysPrev}日</div>` : ''}
       </div>
       ${bestRM > 0 ? `<div class="monthly-item" style="grid-column:1/-1;">
         <div style="font-size:11px;color:var(--sub);margin-bottom:4px;font-weight:700;">${esc(bestEx)}</div>
@@ -4976,6 +5264,10 @@ function renderRestartBanner() {
   if (diff >= 3) {
     el.style.display = 'flex';
     document.getElementById('restart-days').textContent = diff + '日';
+    const suggestions = ['ベンチプレス', 'スクワット', 'デッドリフト', '懸垂', '腕立て伏せ'];
+    const pick = suggestions[Math.floor(Math.random() * suggestions.length)];
+    const sub = document.getElementById('restart-sub');
+    if (sub) sub.textContent = `習慣を取り戻そう。今日は「${pick}」からでもOK →`;
   } else {
     el.style.display = 'none';
   }
@@ -5028,7 +5320,10 @@ function renderTodayMission() {
   // 今日トレ済みならチェックを表示
   if (todayWRecs.length > 0) {
     const exNames = [...new Set(todayWRecs.map(r => r.exercise))];
-    const streak = calcStreak(load(K.w));
+    const wAll = load(K.w);
+    const streak = calcStreak(wAll);
+    const dayStreak = calcDayStreak(wAll);
+    const streakLabel = dayStreak > 0 ? `🔥 ${dayStreak}日連続（${streak}週）継続中` : streak > 0 ? `🔥 ${streak}週連続継続中` : '';
     el.innerHTML = `
       <div class="mission-done-row">
         <span class="mission-done-icon">✅</span>
@@ -5037,7 +5332,7 @@ function renderTodayMission() {
           <div class="mission-done-exs">${exNames.slice(0,4).map(e => esc(e)).join('　·　')}</div>
         </div>
       </div>
-      ${streak > 0 ? `<div class="mission-streak-chip">🔥 ${streak}週連続継続中</div>` : ''}
+      ${streakLabel ? `<div class="mission-streak-chip">${streakLabel}</div>` : ''}
       ${dots7Html}`;
     return;
   }
@@ -5287,7 +5582,7 @@ function awardBadge(id, meta) {
 function shareBadge(id) {
   const def = BADGES[id];
   if (!def) return;
-  const text = encodeURIComponent(def.shareText + '\n\nhttps://yutakato0509.github.io/liftnote');
+  const text = encodeURIComponent(def.shareText + '\n\nhttps://liftnote.pages.dev');
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 }
 
