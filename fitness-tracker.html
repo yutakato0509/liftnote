@@ -11,7 +11,7 @@
 <meta property="og:url"         content="https://liftnote.pages.dev/">
 <meta property="og:title"       content="LiftNote — テクノロジー×筋肉で習慣をハック">
 <meta property="og:description" content="無料・インストール不要のPWA筋トレ記録アプリ LiftNote。ウエイト・有酸素・体重をスマートに管理。">
-<meta property="og:image"       content="https://liftnote.pages.devog-image.svg">
+<meta property="og:image"       content="https://liftnote.pages.dev/og-image.svg">
 <meta property="og:locale"      content="ja_JP">
 <meta property="og:site_name"   content="LiftNote">
 
@@ -19,7 +19,7 @@
 <meta name="twitter:card"        content="summary_large_image">
 <meta name="twitter:title"       content="LiftNote — テクノロジー×筋肉で習慣をハック">
 <meta name="twitter:description" content="無料・インストール不要のPWA筋トレ記録アプリ LiftNote。ウエイト・有酸素・体重をスマートに管理。">
-<meta name="twitter:image"       content="https://liftnote.pages.devog-image.svg">
+<meta name="twitter:image"       content="https://liftnote.pages.dev/og-image.svg">
 
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
@@ -1715,6 +1715,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     </button>
     <div class="user-avatar app-util-avatar" id="user-avatar" onclick="openUserMenu()" style="display:none;"></div>
   </div>
+  <div style="text-align:center;padding:4px 0 8px;">
+    <a href="/privacy.html" target="_blank" rel="noopener" style="font-size:10px;color:var(--sub);text-decoration:none;letter-spacing:.04em;">プライバシーポリシー</a>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -2638,7 +2641,7 @@ function saveWeight() {
 function renderWRecent() {
   const all = sortDesc(load(K.w));
   const el  = document.getElementById('w-recent');
-  if (!all.length) { el.innerHTML = emptyHTML('🏋️','NO RECORDS YET'); return; }
+  if (!all.length) { el.innerHTML = emptyHTML('🏋️','NO RECORDS YET', false); return; }
 
   // PR計算
   const prMap = {};
@@ -2749,7 +2752,7 @@ function saveCardio() {
 function renderCRecent() {
   const all = sortDesc(load(K.c));
   const el  = document.getElementById('c-recent');
-  if (!all.length) { el.innerHTML = emptyHTML('🏃','NO RECORDS YET'); return; }
+  if (!all.length) { el.innerHTML = emptyHTML('🏃','NO RECORDS YET', false); return; }
 
   const dateMap = {}, dates = [];
   all.forEach(r => {
@@ -2855,7 +2858,7 @@ function renderBRecent() {
   }
 
   const el = document.getElementById('b-recent');
-  if (!recs.length) { el.innerHTML = emptyHTML('⚖️','NO RECORDS YET'); return; }
+  if (!recs.length) { el.innerHTML = emptyHTML('⚖️','NO RECORDS YET', false); return; }
 
   el.innerHTML = recs.map(r => `
     <div class="rec-card">
@@ -2899,7 +2902,7 @@ function renderHistory() {
   all.sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 
   const el = document.getElementById('hist-list');
-  if (!all.length) { el.innerHTML = emptyHTML('📋','NO RECORDS YET'); return; }
+  if (!all.length) { el.innerHTML = emptyHTML('📋','NO RECORDS YET', false); return; }
 
   const grouped = {};
   all.forEach(r => { (grouped[r.date] = grouped[r.date]||[]).push(r); });
@@ -3255,8 +3258,8 @@ function renderCalendar() {
   if (!calYear) { calYear = now.getUTCFullYear(); calMonth = now.getUTCMonth(); }
   _drawCalendar();
 }
-function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } _drawCalendar(); }
-function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } _drawCalendar(); }
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } calSelected = null; _drawCalendar(); }
+function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } calSelected = null; _drawCalendar(); }
 
 function _drawCalendar() {
   const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
@@ -4253,7 +4256,7 @@ async function renderPhotoGrid() {
   photoCache = {};
   photos.forEach(p => { photoCache[p.id] = { src: p.src, date: p.date, storageUrl: p.storageUrl }; });
 
-  if (!photos.length) { el.innerHTML = emptyHTML('📷','NO PHOTOS YET'); return; }
+  if (!photos.length) { el.innerHTML = emptyHTML('📷','NO PHOTOS YET', false); return; }
   photos.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt||0) - (a.createdAt||0));
   const grouped = {};
   photos.forEach(p => { (grouped[p.date] = grouped[p.date] || []).push(p); });
