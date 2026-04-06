@@ -1580,15 +1580,43 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .backup-btn-import { background: rgba(255,255,255,.05); color: var(--text); border: 1px solid rgba(255,255,255,.1); }
 .backup-btn-close  { background: transparent; color: var(--sub); border: 1px solid rgba(255,255,255,.08); }
 .backup-btn:active { transform: scale(.97); }
+
+/* ═══════════ OFFLINE BANNER ═══════════ */
+.offline-banner {
+  position: sticky; top: 0; left: 0; right: 0; z-index: 150;
+  background: #1a0f00; border-bottom: 1px solid rgba(255,149,0,.4);
+  padding: 7px 16px;
+  display: none; align-items: center; justify-content: center; gap: 8px;
+  font-size: 12px; font-weight: 700; color: var(--amber);
+  letter-spacing: .04em;
+}
+.offline-banner.show { display: flex; }
+
+/* ═══════════ SYNC INDICATOR ═══════════ */
+.sync-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  display: none; margin-left: 4px;
+  animation: pulse-dot 1.4s infinite;
+}
+.sync-dot.show { display: inline-block; }
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .4; transform: scale(.75); }
+}
 </style>
 </head>
 <body>
+
+<!-- OFFLINE BANNER -->
+<div class="offline-banner" id="offline-banner">📡 オフライン中 — データはローカルに保存されます</div>
 
 <!-- HEADER -->
 <header class="header">
   <div class="header-title">
     <span class="fire">🔥</span>
     <span>Lift<strong>Note</strong></span>
+    <span class="sync-dot" id="sync-dot"></span>
   </div>
   <div class="header-date">
     <div class="day" id="hdr-day"></div>
@@ -2376,6 +2404,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderTodayWorkout();
   openPhotoDB();
   initFirebase();
+  initNetworkStatus();
   checkOnboarding();
   initNotifications();
   checkPwaBanner();
@@ -2578,6 +2607,8 @@ function saveWeight() {
   if (!exercise)       { toast('⚠️ 種目名を入力してください'); return; }
   if (!date)           { toast('⚠️ 日付を入力してください'); return; }
   if (!setData.length) { toast('⚠️ 少なくとも1セット入力してください'); return; }
+  if (setData.some(s => s.weight > 500)) { toast('⚠️ 重量は500kg以内で入力してください'); return; }
+  if (setData.some(s => s.reps > 999))   { toast('⚠️ 回数は999以内で入力してください'); return; }
 
   // Layer 2: 保存前に前回記録を取得（新規記録のみ）
   const isNewRecord = !editingId.w;
@@ -2715,8 +2746,10 @@ function saveCardio() {
   const duration = parseInt(document.getElementById('c-duration').value);
   const distance = parseFloat(document.getElementById('c-distance').value);
   const date     = document.getElementById('c-date').value;
-  if (!date)                   { toast('⚠️ 日付を入力してください'); return; }
-  if (!duration || duration<1) { toast('⚠️ 時間を入力してください'); return; }
+  if (!date)                    { toast('⚠️ 日付を入力してください'); return; }
+  if (!duration || duration<1)  { toast('⚠️ 時間を入力してください'); return; }
+  if (duration > 600)           { toast('⚠️ 時間は600分以内で入力してください'); return; }
+  if (!isNaN(distance) && distance > 1000) { toast('⚠️ 距離は1000km以内で入力してください'); return; }
 
   const arr = load(K.c);
   if (editingId.c) {
@@ -2790,8 +2823,10 @@ function saveBody() {
   const fatPct = parseFloat(document.getElementById('b-fat').value);
   const date   = document.getElementById('b-date').value;
 
-  if (!date)               { toast('⚠️ 日付を入力してください'); return; }
+  if (!date)                    { toast('⚠️ 日付を入力してください'); return; }
   if (isNaN(weight)||weight<=0) { toast('⚠️ 体重を入力してください'); return; }
+  if (weight < 20 || weight > 300) { toast('⚠️ 体重は20〜300kgの範囲で入力してください'); return; }
+  if (!isNaN(fatPct) && fatPct !== '' && (fatPct < 0 || fatPct > 60)) { toast('⚠️ 体脂肪率は0〜60%の範囲で入力してください'); return; }
 
   const fat = isNaN(fatPct) ? null : fatPct;
   const arr = load(K.b);
@@ -4600,6 +4635,24 @@ const FIREBASE_CONFIG = {
 ───────────────────────────────────────── */
 let fbAuth = null, fbDb = null, fbStorage = null, syncTimer = null;
 
+/* ─────────────────────────────────────────
+   NETWORK STATUS
+───────────────────────────────────────── */
+function initNetworkStatus() {
+  const banner = document.getElementById('offline-banner');
+  function update() {
+    banner.classList.toggle('show', !navigator.onLine);
+  }
+  window.addEventListener('online',  () => { update(); toast('✅ オンラインに復帰しました'); });
+  window.addEventListener('offline', () => { update(); toast('📡 オフラインになりました'); });
+  update();
+}
+
+function setSyncDot(on) {
+  const dot = document.getElementById('sync-dot');
+  if (dot) dot.classList.toggle('show', on);
+}
+
 function initFirebase() {
   if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return; // 未設定ならスキップ
   if (typeof firebase === 'undefined') {
@@ -4692,6 +4745,7 @@ function setSyncState(state) {
   const el = document.getElementById('sync-icon');
   el.className = 'sync-icon ' + state;
   el.textContent = state === 'ok' ? '✓' : state === 'err' ? '!' : '⟳';
+  setSyncDot(state === 'syncing');
 }
 
 async function pushToFirestore() {
@@ -4719,6 +4773,7 @@ async function pushToFirestore() {
 
 async function pullFromFirestore(uid) {
   if (!fbDb) return;
+  setSyncState('syncing');
   try {
     const doc = await fbDb.collection('users').doc(uid).get();
     if (!doc.exists) {
