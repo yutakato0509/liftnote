@@ -17,3 +17,6 @@
 !icons/*.png
 !icons/*.svg
 !robots.txt
+!fitness-tracker.html
+!vba/
+!vba/*.bas
