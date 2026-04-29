@@ -1604,6 +1604,35 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   0%,100% { opacity: 1; transform: scale(1); }
   50%      { opacity: .4; transform: scale(.75); }
 }
+
+/* ═══════════ ROUTINE CARDS ═══════════ */
+.routine-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.routine-section-label { font-size:10px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.1em; }
+.routine-cards-scroll { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.routine-cards-scroll::-webkit-scrollbar { display:none; }
+.routine-card { flex-shrink:0; background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 14px 10px 12px; cursor:pointer; min-width:110px; max-width:170px; transition:all .15s; position:relative; }
+.routine-card:active { background:rgba(255,85,0,.1); border-color:rgba(255,85,0,.4); transform:scale(.96); }
+.routine-card-name { font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:14px; }
+.routine-card-count { font-size:10px; color:var(--sub); margin-top:3px; }
+.routine-card-del { position:absolute; top:5px; right:6px; font-size:11px; color:rgba(255,255,255,.25); background:none; border:none; cursor:pointer; padding:2px; line-height:1; font-family:inherit; }
+.routine-card-del:active { color:var(--red); }
+.routine-empty { font-size:12px; color:var(--sub); padding:6px 0; }
+
+/* ═══════════ SESSION QUEUE ═══════════ */
+.session-queue-wrap { background:rgba(255,85,0,.06); border:1px solid rgba(255,85,0,.18); border-radius:12px; padding:10px 12px; margin-bottom:12px; }
+.session-queue-label { font-size:10px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; }
+.session-queue-pills { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+.sq-pill { padding:4px 10px; border-radius:12px; font-size:11px; font-weight:700; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:var(--sub); }
+.sq-pill.active { background:rgba(255,85,0,.15); border-color:rgba(255,85,0,.5); color:var(--accent); }
+.sq-pill.done { background:rgba(0,212,106,.08); border-color:rgba(0,212,106,.25); color:var(--green); opacity:.7; }
+.session-progress-text { font-size:11px; color:var(--sub); }
+.session-skip-btn { font-size:10px; color:var(--sub); background:none; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:2px 8px; cursor:pointer; font-family:inherit; }
+.session-skip-btn:active { color:var(--text); }
+
+/* ═══════════ WEIGHT ADJUST ═══════════ */
+.set-weight-adj { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:5px; }
+.set-adj-btn { width:26px; height:26px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:7px; color:rgba(255,255,255,.5); font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; -webkit-appearance:none; font-family:inherit; transition:background .12s; flex-shrink:0; }
+.set-adj-btn:active { background:rgba(255,85,0,.25); color:var(--accent); border-color:rgba(255,85,0,.4); }
 </style>
 </head>
 <body>
@@ -1825,6 +1854,28 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div class="card">
       <div class="card-label">Weight Training</div>
       <div class="glow-line"></div>
+
+      <!-- ルーティンセクション -->
+      <div id="routine-section" style="margin-bottom:14px;">
+        <div class="routine-header">
+          <div class="routine-section-label">ルーティン</div>
+          <button onclick="openSaveRoutineSheet()" style="font-size:11px;padding:3px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:rgba(255,255,255,.5);cursor:pointer;font-family:inherit;">＋ 保存</button>
+        </div>
+        <div id="routine-cards" class="routine-cards-scroll">
+          <div class="routine-empty">保存したルーティンがここに表示されます</div>
+        </div>
+      </div>
+
+      <!-- セッションキュー（ルーティン読み込み時に表示） -->
+      <div id="session-queue-wrap" class="session-queue-wrap" style="display:none;">
+        <div class="session-queue-label">
+          <span>セッション進捗</span>
+          <button class="session-skip-btn" onclick="skipSessionExercise()">スキップ →</button>
+        </div>
+        <div id="session-queue-pills" class="session-queue-pills"></div>
+        <div id="session-progress-text" class="session-progress-text"></div>
+      </div>
+
       <div class="day-tag-section">
         <div class="day-tag-label">部位タグ</div>
         <div class="day-tag-chips" id="day-tag-chips">
@@ -2212,7 +2263,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 /* ─────────────────────────────────────────
    STORAGE
 ───────────────────────────────────────── */
-const K = { w: 'ft_weights', c: 'ft_cardio', b: 'ft_body', favs: 'ft_favs', goals: 'ft_goals' };
+const K = { w: 'ft_weights', c: 'ft_cardio', b: 'ft_body', favs: 'ft_favs', goals: 'ft_goals', routines: 'ln_routines' };
 
 function load(k)    { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } }
 function save(k, d) {
@@ -2226,6 +2277,123 @@ function save(k, d) {
     }
   }
   scheduleSync();
+}
+
+/* ─────────────────────────────────────────
+   ROUTINES & SESSION QUEUE
+───────────────────────────────────────── */
+let sessionQueue = [];
+let sessionQueueIdx = 0;
+
+function renderRoutineCards() {
+  const routines = load(K.routines);
+  const el = document.getElementById('routine-cards');
+  if (!routines.length) {
+    el.innerHTML = '<div class="routine-empty">保存したルーティンがここに表示されます</div>';
+    return;
+  }
+  el.innerHTML = routines.map(r => `
+    <div class="routine-card" onclick="loadRoutine('${r.id}')">
+      <button class="routine-card-del" type="button" onclick="event.stopPropagation();deleteRoutine('${r.id}')">✕</button>
+      <div class="routine-card-name">${esc(r.name)}</div>
+      <div class="routine-card-count">${r.exercises.length}種目</div>
+    </div>`).join('');
+}
+
+function openSaveRoutineSheet() {
+  const todayRecs = sortDesc(load(K.w)).filter(r => r.date === today());
+  if (!todayRecs.length) {
+    toast('⚠️ 今日の記録を保存してからルーティンを作成できます');
+    return;
+  }
+  const name = prompt('ルーティン名を入力してください\n例: 胸・三頭の日 / 背中の日');
+  if (!name || !name.trim()) return;
+  const exercises = todayRecs.slice().reverse().map(r => ({
+    exercise: r.exercise,
+    sets: (r.setData || []).map(s => ({ weight: s.weight || 0, reps: s.reps || 0 })),
+  }));
+  const routines = load(K.routines);
+  routines.push({ id: uid(), name: name.trim(), exercises });
+  localStorage.setItem(K.routines, JSON.stringify(routines));
+  renderRoutineCards();
+  toast(`✅ 「${name.trim()}」を保存しました（${exercises.length}種目）`);
+}
+
+function loadRoutine(id) {
+  const r = load(K.routines).find(x => x.id === id);
+  if (!r) return;
+  if (sessionQueue.length && sessionQueueIdx < sessionQueue.length) {
+    if (!confirm(`現在のセッション（${sessionQueue.length}種目）をキャンセルして「${r.name}」を開始しますか？`)) return;
+  }
+  sessionQueue = r.exercises.slice();
+  sessionQueueIdx = 0;
+  renderSessionQueue();
+  loadSessionExercise(0);
+  toast(`📋 「${r.name}」を開始（${r.exercises.length}種目）`);
+}
+
+function deleteRoutine(id) {
+  const routines = load(K.routines).filter(r => r.id !== id);
+  localStorage.setItem(K.routines, JSON.stringify(routines));
+  renderRoutineCards();
+  toast('🗑 ルーティンを削除しました');
+}
+
+function renderSessionQueue() {
+  const wrap = document.getElementById('session-queue-wrap');
+  if (!sessionQueue.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  document.getElementById('session-queue-pills').innerHTML = sessionQueue.map((ex, i) => {
+    const cls = i < sessionQueueIdx ? 'done' : i === sessionQueueIdx ? 'active' : '';
+    return `<div class="sq-pill ${cls}">${i < sessionQueueIdx ? '✓ ' : ''}${esc(ex.exercise)}</div>`;
+  }).join('');
+  const done = Math.min(sessionQueueIdx, sessionQueue.length);
+  document.getElementById('session-progress-text').textContent = `${done} / ${sessionQueue.length} 種目完了`;
+}
+
+function loadSessionExercise(idx) {
+  if (idx >= sessionQueue.length) return;
+  const ex = sessionQueue[idx];
+  const exInput = document.getElementById('w-exercise');
+  exInput.value = ex.exercise;
+  document.getElementById('w-exercise-clear').classList.add('visible');
+  document.getElementById('w-sets-container').innerHTML = '';
+  setRowCount = 0;
+  if (ex.sets && ex.sets.length) {
+    ex.sets.forEach(s => addSetRow(s.weight || '', s.reps || '', s.assisted || ''));
+  } else {
+    autofillSets(ex.exercise);
+    if (!document.querySelector('#w-sets-container .set-row')) addSetRow();
+    return;
+  }
+  document.getElementById('autofill-hint').style.display = 'block';
+  setTimeout(() => updateSetPrevHints(ex.exercise), 50);
+}
+
+function skipSessionExercise() {
+  if (!sessionQueue.length) return;
+  sessionQueueIdx++;
+  if (sessionQueueIdx < sessionQueue.length) {
+    renderSessionQueue();
+    loadSessionExercise(sessionQueueIdx);
+  } else {
+    clearSession();
+    toast('✅ セッション完了！');
+  }
+}
+
+function clearSession() {
+  sessionQueue = [];
+  sessionQueueIdx = 0;
+  document.getElementById('session-queue-wrap').style.display = 'none';
+}
+
+function adjustWeight(btn, delta) {
+  const row = btn.closest('.set-row');
+  const input = row.querySelector('.set-weight');
+  const val = Math.max(0, Math.round(((parseFloat(input.value) || 0) + delta) * 10) / 10);
+  input.value = val;
+  saveDraft('w');
 }
 
 /* ─────────────────────────────────────────
@@ -2399,6 +2567,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderDayTagChips();
   renderHome();
   renderWRecent();
+  renderRoutineCards();
   renderCRecent();
   renderBRecent();
   renderTodayWorkout();
@@ -2629,6 +2798,17 @@ function saveWeight() {
   save(K.w, arr);
   showLimit.w = 15;
   resetWForm();
+  // セッションキュー進行（新規記録のみ）
+  if (isNewRecord && sessionQueue.length) {
+    sessionQueueIdx++;
+    if (sessionQueueIdx < sessionQueue.length) {
+      renderSessionQueue();
+      setTimeout(() => loadSessionExercise(sessionQueueIdx), 80);
+    } else {
+      clearSession();
+      toast('🎉 全種目の記録が完了しました！');
+    }
+  }
   renderWRecent();
   renderHome();
   renderTodayWorkout();
@@ -4376,7 +4556,11 @@ function addSetRow(weight = '', reps = '', assisted = '') {
         <label>重量</label>
         <input type="number" class="set-weight" value="${weight}" placeholder="60" min="0" step="0.5" inputmode="decimal"
                style="font-size:22px;color:var(--accent);">
-        <div class="stat-unit">kg</div>
+        <div class="set-weight-adj">
+          <button class="set-adj-btn" type="button" onclick="adjustWeight(this,-2.5)">−</button>
+          <div class="stat-unit">kg</div>
+          <button class="set-adj-btn" type="button" onclick="adjustWeight(this,2.5)">＋</button>
+        </div>
       </div>
       <div class="stat-field">
         <label>回数</label>
