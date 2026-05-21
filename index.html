@@ -21,8 +21,8 @@
 <meta name="twitter:description" content="無料・インストール不要のPWA筋トレ記録アプリ LiftNote。ウエイト・有酸素・体重をスマートに管理。">
 <meta name="twitter:image"       content="https://yutakato0509.github.io/liftnote/og-image.svg">
 
-<link rel="manifest" href="./manifest.json">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <meta name="theme-color" content="#ff5500">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1299,13 +1299,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .pr-modal-exercise {
   font-size:20px; font-weight:900; color:#fff; margin-bottom:12px;
 }
-.pr-modal-rm {
-  font-size:52px; font-weight:900; line-height:1;
-  background:linear-gradient(135deg,#ff5500,#ff2d55);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  background-clip:text; font-variant-numeric:tabular-nums;
-}
-.pr-modal-rm-unit { font-size:22px; font-weight:700; color:var(--sub); margin-left:3px; }
 .pr-modal-diff {
   font-size:16px; font-weight:800; color:var(--green);
   margin:8px 0 20px;
@@ -1507,15 +1500,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 .bw-goal-pct { font-size:18px; font-weight:900; color:var(--amber); font-variant-numeric:tabular-nums; }
 
 /* REST TIMER */
-.rest-timer-fab {
-  position: fixed; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 16px); right: 16px;
-  z-index: 150; display: none; flex-direction: column; align-items: center;
-  background: #1a1a1a; border: 1px solid rgba(255,85,0,.4); border-radius: 20px;
-  padding: 14px 16px 12px; box-shadow: 0 8px 32px rgba(0,0,0,.7), 0 0 20px rgba(255,85,0,.15);
-  min-width: 130px;
-}
-.rest-timer-fab.show { display: flex; }
-.rest-timer-label { font-size: 9px; font-weight: 900; color: var(--sub); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
 .rest-timer-display { font-size: 36px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 10px; }
 .rest-timer-display.done { color: var(--green); animation: timerDone .4s ease infinite alternate; }
 @keyframes timerDone { from { opacity:1; } to { opacity:.4; } }
@@ -1536,7 +1520,35 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 }
 .rest-ctrl-start { background: linear-gradient(135deg,#ff5500,#ff2d55); color: #fff; }
 .rest-ctrl-reset { background: rgba(255,255,255,.07); color: var(--sub); }
-.rest-ctrl-close { background: rgba(255,255,255,.04); color: var(--sub); }
+
+/* TIMER TAB VIEW */
+#view-timer .rest-timer-display {
+  font-size: 88px; letter-spacing: -2px; margin: 20px 0 14px;
+}
+#view-timer .timer-inner { display:flex; flex-direction:column; align-items:center; padding: 20px 0 8px; }
+#view-timer .rest-timer-presets { justify-content: center; gap: 10px; margin-bottom: 16px; }
+#view-timer .rest-preset-btn { padding: 8px 14px; font-size: 13px; min-width: 56px; }
+#view-timer .rest-timer-controls { justify-content: center; max-width: 280px; margin: 0 auto; }
+#view-timer .rest-ctrl-start { padding: 14px 24px; font-size: 15px; border-radius: 14px; }
+#view-timer .rest-ctrl-reset { padding: 14px 16px; font-size: 15px; border-radius: 14px; max-width: 64px; }
+#view-timer .timer-hint {
+  font-size: 12px; color: var(--sub); margin-top: 22px; line-height: 1.6; text-align: center;
+}
+
+/* PART SUGGESTION CHIPS */
+.part-sug-label {
+  font-size: 10px; color: var(--sub); font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; margin-bottom: 7px;
+}
+.part-sug-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.part-sug-chip {
+  padding: 6px 13px; border-radius: 20px;
+  border: 1px solid rgba(255,85,0,.35);
+  background: rgba(255,85,0,.08); color: var(--accent);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: inherit; -webkit-appearance: none; transition: all .15s;
+}
+.part-sug-chip:active { background: rgba(255,85,0,.22); transform: scale(.95); }
 
 /* MUSCLE BALANCE */
 .mb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -1661,7 +1673,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <span class="pr-modal-badge">🏆</span>
     <div class="pr-modal-label">NEW PERSONAL RECORD</div>
     <div class="pr-modal-exercise" id="pr-modal-exercise"></div>
-    <div class="pr-modal-rm" id="pr-modal-rm"><span id="pr-modal-rm-num"></span><span class="pr-modal-rm-unit">kg</span></div>
     <div class="pr-modal-diff" id="pr-modal-diff"></div>
     <button class="pr-modal-share" onclick="sharePrModal()">🔥 Xでシェアする</button>
     <button class="pr-modal-close" onclick="closePrModal()">後で</button>
@@ -1834,7 +1845,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
     <div class="user-avatar app-util-avatar" id="user-avatar" onclick="openUserMenu()" style="display:none;"></div>
   </div>
   <div style="text-align:center;padding:4px 0 8px;">
-    <a href="./privacy.html" target="_blank" rel="noopener" style="font-size:10px;color:var(--sub);text-decoration:none;letter-spacing:.04em;">プライバシーポリシー</a>
+    <a href="/privacy.html" target="_blank" rel="noopener" style="font-size:10px;color:var(--sub);text-decoration:none;letter-spacing:.04em;">プライバシーポリシー</a>
   </div>
 </div>
 
@@ -1884,9 +1895,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
           <button class="day-tag-chip" type="button" onclick="toggleDayTag(this,'脚')">脚</button>
           <button class="day-tag-chip" type="button" onclick="toggleDayTag(this,'肩')">肩</button>
           <button class="day-tag-chip" type="button" onclick="toggleDayTag(this,'腕')">腕</button>
+          <button class="day-tag-chip" type="button" onclick="toggleDayTag(this,'腹筋')">腹筋</button>
           <button class="day-tag-chip" type="button" onclick="toggleDayTag(this,'全身')">全身</button>
         </div>
       </div>
+      <div id="part-exercise-suggestions" style="display:none;margin:6px 0 2px;"></div>
       <div class="field">
         <label>種目名</label>
         <div class="field-wrap">
@@ -1927,7 +1940,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       </div>
       <div id="w-sets-container"></div>
       <button class="btn-add-set" onclick="addSetRow()">＋ セットを追加</button>
-      <button class="btn-open-timer" onclick="openTimer()">⏱ レストタイマー</button>
+      <button class="btn-open-timer" onclick="nav('timer',document.querySelectorAll('.nav-item')[2])">⏱ レストタイマー</button>
       <div class="field" style="margin-top:4px;">
         <label>日付</label>
         <input type="date" id="w-date" onchange="renderDayTagChips()">
@@ -2066,6 +2079,30 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
 </div>
 
 <!-- ═══════════════════════════════════════
+     VIEW: タイマー
+════════════════════════════════════════ -->
+<div id="view-timer" class="view">
+  <div class="card">
+    <div class="card-label">⏱ Rest Timer</div>
+    <div class="glow-line"></div>
+    <div class="timer-inner">
+      <div class="rest-timer-display" id="rest-timer-display">1:30</div>
+      <div class="rest-timer-presets">
+        <button class="rest-preset-btn" onclick="setRestPreset(60)">1m</button>
+        <button class="rest-preset-btn active" onclick="setRestPreset(90)">1:30</button>
+        <button class="rest-preset-btn" onclick="setRestPreset(120)">2m</button>
+        <button class="rest-preset-btn" onclick="setRestPreset(180)">3m</button>
+      </div>
+      <div class="rest-timer-controls">
+        <button class="rest-ctrl-btn rest-ctrl-start" id="rest-ctrl-start" onclick="toggleRestTimer()">▶ スタート</button>
+        <button class="rest-ctrl-btn rest-ctrl-reset" onclick="resetRestTimer()">↺</button>
+      </div>
+      <div class="timer-hint">セットが終わったらここで休憩を計測しよう<br>バックグラウンドでも動作します</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
      VIEW: カレンダー
 ════════════════════════════════════════ -->
 <div id="view-calendar" class="view">
@@ -2131,6 +2168,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
         <circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
       </svg>
     </span>LOG
+  </div>
+  <div class="nav-item" onclick="nav('timer',this)">
+    <span class="nav-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="13" r="8"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="13" x2="15" y2="15"/>
+        <line x1="9" y1="3" x2="15" y2="3"/>
+      </svg>
+    </span>TIMER
   </div>
   <div class="nav-item" onclick="nav('calendar',this)">
     <span class="nav-icon">
@@ -2228,22 +2275,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
   </div>
 </div>
 
-<!-- REST TIMER FAB -->
-<div class="rest-timer-fab" id="rest-timer-fab">
-  <div class="rest-timer-label">⏱ REST</div>
-  <div class="rest-timer-display" id="rest-timer-display">1:30</div>
-  <div class="rest-timer-presets">
-    <button class="rest-preset-btn" onclick="setRestPreset(60)">1m</button>
-    <button class="rest-preset-btn active" onclick="setRestPreset(90)">1:30</button>
-    <button class="rest-preset-btn" onclick="setRestPreset(120)">2m</button>
-    <button class="rest-preset-btn" onclick="setRestPreset(180)">3m</button>
-  </div>
-  <div class="rest-timer-controls">
-    <button class="rest-ctrl-btn rest-ctrl-start" id="rest-ctrl-start" onclick="toggleRestTimer()">▶ スタート</button>
-    <button class="rest-ctrl-btn rest-ctrl-reset" onclick="resetRestTimer()">↺</button>
-    <button class="rest-ctrl-btn rest-ctrl-close" onclick="closeRestTimer()">✕</button>
-  </div>
-</div>
 <!-- BACKUP MODAL -->
 <div class="backup-modal" id="backup-modal" onclick="closeBackupModal(event)">
   <div class="backup-sheet">
@@ -2602,7 +2633,7 @@ let editingId = { w: null, c: null, b: null };
 
 // 指定ビューに切り替える（ナビアイコンのactive状態も同期）
 function goToView(view) {
-  const VIEWS = ['home','record','calendar'];
+  const VIEWS = ['home','record','timer','calendar'];
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach((n, i) => n.classList.toggle('active', VIEWS[i] === view));
   document.getElementById('view-' + view).classList.add('active');
@@ -2792,8 +2823,8 @@ function saveWeight() {
     toast('✅ 更新しました！');
   } else {
     arr.push({ id: uid(), date, exercise, memo, setData });
-    toast('🎉 記録しました！');
-    showRestTimer();
+    const isFirstEverForEx = !prevRecord;
+    toast(isFirstEverForEx ? `🌟 ${exercise} 初記録！` : '🎉 記録しました！');
   }
   save(K.w, arr);
   showLimit.w = 15;
@@ -3598,7 +3629,7 @@ function generateInsights() {
       const old1RM = get1RM(old30), new1RM = get1RM(new30);
       if (new1RM > old1RM && old1RM > 0) {
         const diff = new1RM - old1RM;
-        return [{ icon:'💪', msg:`${ex}の推定1RMが1ヶ月で +${diff}kg！`, sub:`${old1RM}kg → ${new1RM}kg (推定)` }];
+        return [{ icon:'💪', msg:`${ex}が1ヶ月で強くなってる！`, sub:`最大重量が着実に伸びています` }];
       }
     }
   }
@@ -3659,6 +3690,7 @@ function toggleDayTag(btn, tag) {
   else           { tags.push(tag);     btn.classList.add('active'); }
   if (tags.length) data[date] = tags; else delete data[date];
   localStorage.setItem(DAY_TAG_KEY, JSON.stringify(data));
+  renderPartSuggestions();
 }
 function renderDayTagChips() {
   const date = document.getElementById('w-date').value || today();
@@ -3666,6 +3698,58 @@ function renderDayTagChips() {
   document.querySelectorAll('.day-tag-chip').forEach(btn => {
     btn.classList.toggle('active', tags.includes(btn.textContent.trim()));
   });
+  renderPartSuggestions();
+}
+
+/* ─────────────────────────────────────────
+   PART EXERCISE SUGGESTIONS
+───────────────────────────────────────── */
+function getExercisesForPart(part) {
+  const tagData = loadDayTagsData();
+  const dates = new Set(
+    Object.entries(tagData)
+      .filter(([, tags]) => tags.includes(part))
+      .map(([d]) => d)
+  );
+  if (!dates.size) return [];
+  const freq = {};
+  load(K.w).forEach(r => {
+    if (dates.has(r.date)) {
+      freq[r.exercise] = (freq[r.exercise] || 0) + 1;
+    }
+  });
+  return Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([ex]) => ex);
+}
+function renderPartSuggestions() {
+  const el = document.getElementById('part-exercise-suggestions');
+  if (!el) return;
+  const activeTags = [...document.querySelectorAll('.day-tag-chip.active')]
+    .map(b => b.textContent.trim());
+  if (!activeTags.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  const seen = new Set();
+  const suggestions = [];
+  activeTags.forEach(tag => {
+    getExercisesForPart(tag).forEach(ex => {
+      if (!seen.has(ex)) { seen.add(ex); suggestions.push(ex); }
+    });
+  });
+  if (!suggestions.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="part-sug-label">おすすめ種目</div>
+    <div class="part-sug-chips">
+      ${suggestions.map(ex =>
+        `<button class="part-sug-chip" onclick="selectSuggestedExercise('${esc(ex)}')">${esc(ex)}</button>`
+      ).join('')}
+    </div>`;
+}
+function selectSuggestedExercise(ex) {
+  document.getElementById('w-exercise').value = ex;
+  onExerciseInput(ex);
+  document.getElementById('w-exercise').focus();
 }
 function tagBadgesHTML(tags) {
   if (!tags || !tags.length) return '';
@@ -3714,7 +3798,6 @@ let _prModalData = null;
 function showPrModal(exercise, newRM, diffRM) {
   _prModalData = { exercise, newRM, diffRM };
   document.getElementById('pr-modal-exercise').textContent = exercise;
-  document.getElementById('pr-modal-rm-num').textContent = newRM;
   document.getElementById('pr-modal-diff').textContent = diffRM > 0 ? `前回比 +${diffRM}kg 📈` : '初めての記録！🎉';
   // 紙吹雪生成
   const modal = document.getElementById('pr-modal');
@@ -3756,7 +3839,7 @@ function closePrModal(e) {
 function sharePrModal() {
   if (!_prModalData) return;
   const { exercise, newRM, diffRM } = _prModalData;
-  const text = `🏆 NEW PR！\n${exercise} 推定1RM ${newRM}kg${diffRM>0?` (+${diffRM}kg)`:''}🔥\n\nLiftNoteで記録中 #LiftNote #筋トレ #${exercise.replace(/\s/g,'')}`;
+  const text = `🏆 NEW PR！\n${exercise}${diffRM>0?` +${diffRM}kg 📈`:''}🔥\n\nLiftNoteで記録中 #LiftNote #筋トレ #${exercise.replace(/\s/g,'')}`;
   if (navigator.share) {
     navigator.share({ title:'LiftNote PR更新！', text, url:'https://yutakato0509.github.io/liftnote/' }).catch(()=>{});
   } else {
@@ -5099,16 +5182,6 @@ function renderMonthlySummary() {
   const wDiff = wDays - wDaysPrev, cDiff = cDays - cDaysPrev;
   const diffStr = (n) => n === 0 ? '' : n > 0 ? `<span style="font-size:9px;color:var(--green);font-weight:800;margin-left:4px;">▲${n}</span>` : `<span style="font-size:9px;color:var(--red);font-weight:800;margin-left:4px;">▼${Math.abs(n)}</span>`;
 
-  // 今月の最高1RM
-  let bestRM = 0, bestEx = '';
-  wAll.forEach(r => {
-    const sets = r.setData || [{ weight: r.weight||0, reps: r.reps||0 }];
-    sets.forEach(s => {
-      const rm = calc1RM(s.weight, s.reps);
-      if (rm > bestRM) { bestRM = rm; bestEx = r.exercise; }
-    });
-  });
-
   // 体重変化（今月の最初と最後）
   const bwSorted = bAll.sort((a,b) => a.date.localeCompare(b.date));
   const bwFirst = bwSorted[0]?.weight, bwLast = bwSorted[bwSorted.length-1]?.weight;
@@ -5135,11 +5208,6 @@ function renderMonthlySummary() {
         <div class="monthly-label">🏃 有酸素日数</div>
         ${cDaysPrev > 0 ? `<div style="font-size:9px;color:var(--sub);margin-top:3px;">先月 ${cDaysPrev}日</div>` : ''}
       </div>
-      ${bestRM > 0 ? `<div class="monthly-item" style="grid-column:1/-1;">
-        <div style="font-size:11px;color:var(--sub);margin-bottom:4px;font-weight:700;">${esc(bestEx)}</div>
-        <div class="monthly-num" style="color:var(--amber);">${bestRM}<span style="font-size:14px;font-weight:700;"> kg</span></div>
-        <div class="monthly-label">🏆 最高推定1RM</div>
-      </div>` : ''}
       ${bwChange !== null ? `<div class="monthly-item" style="grid-column:1/-1;">
         <div class="monthly-num" style="color:${bwColor};">${bwSign}${bwChange}kg</div>
         <div class="monthly-label">⚖️ 体重変化</div>
@@ -5297,7 +5365,7 @@ function renderTodayMission() {
 
   // 部位タグの最終トレ日を調べる
   const tagData = JSON.parse(localStorage.getItem('ft_day_tags') || '{}');
-  const bodyParts = ['胸','背中','脚','肩','腕','全身'];
+  const bodyParts = ['胸','背中','脚','肩','腕','腹筋','全身'];
   const lastMap = {};
   bodyParts.forEach(part => {
     const dates = Object.entries(tagData)
@@ -5397,10 +5465,6 @@ function showSaveComparison(exercise, newSets, prevRecord) {
         <div class="compare-kpi-label">Max Weight</div>
         <div class="compare-kpi-val ${wDiff>0?'up':wDiff<0?'down':'same'}">${newMaxW}kg${fmtDiff(wDiff,'kg')}</div>
       </div>
-      <div class="compare-kpi">
-        <div class="compare-kpi-label">推定1RM</div>
-        <div class="compare-kpi-val">${calc1RM(newMaxW, newSets.find(s=>s.weight===newMaxW)?.reps||1)}kg</div>
-      </div>
     </div>
     <div class="compare-prev-date">前回: ${fmtDateFull(prevRecord.date)}</div>
     <table class="compare-set-table">
@@ -5433,8 +5497,7 @@ function showExHistorySheet(exercise) {
   if (histSheetChart) { histSheetChart.destroy(); histSheetChart = null; }
   const chartData = [...records].reverse().map(r => {
     const maxW = r.setData ? Math.max(...r.setData.map(s=>s.weight||0)) : (r.weight||0);
-    const maxR = r.setData ? r.setData.find(s=>s.weight===maxW)?.reps||1 : (r.reps||1);
-    return { date: r.date, maxW, rm1: calc1RM(maxW, maxR) };
+    return { date: r.date, maxW };
   });
   const wrap = document.getElementById('hist-sheet-chart-wrap');
   wrap.innerHTML = '<canvas id="hist-sheet-chart"></canvas>';
@@ -5451,21 +5514,13 @@ function showExHistorySheet(exercise) {
           backgroundColor: ctx => { const g=ctx.chart.ctx.createLinearGradient(0,0,0,130); g.addColorStop(0,'rgba(255,85,0,.3)'); g.addColorStop(1,'rgba(255,85,0,.01)'); return g; },
           fill: true, tension: 0.4, pointBackgroundColor: '#ff5500', pointBorderColor: '#131313',
           pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 7, borderWidth: 2.5, yAxisID: 'y',
-        },
-        {
-          label: '推定1RM',
-          data: chartData.map(d => d.rm1),
-          borderColor: 'rgba(255,45,85,.8)',
-          borderDash: [4,3], fill: false, tension: 0.4,
-          pointBackgroundColor: 'rgba(255,45,85,.8)', pointBorderColor: '#131313',
-          pointBorderWidth: 1.5, pointRadius: 3, borderWidth: 1.8, yAxisID: 'y',
         }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { display: true, labels: { color: '#efefef', font: { size: 10, weight: '700' }, boxWidth: 20, padding: 10 } },
+        legend: { display: false },
         tooltip: { backgroundColor: '#1c1c1c', borderColor: '#333', borderWidth: 1, titleColor: '#efefef', bodyColor: '#efefef', padding: 8 }
       },
       scales: {
@@ -5477,8 +5532,6 @@ function showExHistorySheet(exercise) {
 
   // セッション一覧
   document.getElementById('hist-sheet-list').innerHTML = records.map(r => {
-    const maxW = r.setData ? Math.max(...r.setData.map(s=>s.weight||0)) : (r.weight||0);
-    const maxR = r.setData ? r.setData.find(s=>s.weight===maxW)?.reps||1 : (r.reps||1);
     const setsStr = r.setData
       ? r.setData.map((s,i) => `${i+1}. ${s.weight>0?s.weight+'kg':'自重'} × ${s.reps}`).join('　')
       : `${r.weight>0?r.weight+'kg':'自重'} × ${r.reps} × ${r.sets}set`;
@@ -5486,7 +5539,6 @@ function showExHistorySheet(exercise) {
       <div class="hist-session">
         <div class="hist-session-date">${fmtDateFull(r.date)}</div>
         <div class="hist-session-sets">${setsStr}</div>
-        ${maxW > 0 ? `<div class="hist-session-1rm" style="margin-top:3px;">推定1RM ${calc1RM(maxW, maxR)}kg</div>` : ''}
       </div>`;
   }).join('');
 
@@ -5666,17 +5718,6 @@ function renderTodayWorkout() {
 ───────────────────────────────────────── */
 let _restTotal = 90, _restRemain = 90, _restRunning = false, _restInterval = null;
 
-function showRestTimer() {
-  const fab = document.getElementById('rest-timer-fab');
-  if (!fab) return;
-  fab.classList.add('show');
-  resetRestTimer(false);
-}
-function closeRestTimer() {
-  clearInterval(_restInterval);
-  _restRunning = false;
-  document.getElementById('rest-timer-fab').classList.remove('show');
-}
 function setRestPreset(sec) {
   _restTotal = sec; _restRemain = sec; _restRunning = false;
   clearInterval(_restInterval);
