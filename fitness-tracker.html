@@ -2309,6 +2309,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       📥 JSONからインポート（復元）
     </button>
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="backup-btn backup-btn-import" onclick="document.getElementById('import-csv-file').click()">
+      📥 CSVからインポート（Strong / Hevy）
+    </button>
+    <input type="file" id="import-csv-file" accept=".csv" style="display:none" onchange="importCSV(event)">
     <button class="backup-btn backup-btn-close" onclick="closeBackupModal()">✕ 閉じる</button>
   </div>
 </div>
@@ -5895,6 +5899,104 @@ function importData(e) {
       } else {
         toast('⚠️ 読み込みに失敗しました: ' + err.message);
       }
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ─────────────────────────────────────────
+   CSV IMPORT（Strong / Hevy からの乗り換え）
+───────────────────────────────────────── */
+function parseCSVText(text) {
+  const rows = [];
+  let row = [], cell = '', inQ = false;
+  const s = String(text).replace(/^\uFEFF/, '');
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inQ) {
+      if (ch === '"') { if (s[i + 1] === '"') { cell += '"'; i++; } else inQ = false; }
+      else cell += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === ',') { row.push(cell); cell = ''; }
+    else if (ch === '\n') { row.push(cell); cell = ''; rows.push(row); row = []; }
+    else if (ch !== '\r') cell += ch;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => String(c).trim() !== ''));
+}
+
+function parseWorkoutCSV(text) {
+  const rows = parseCSVText(text);
+  if (rows.length < 2) return { format: null, records: [], skipped: 0 };
+  const head = rows[0].map(h => String(h).trim());
+  const idx = name => head.indexOf(name);
+  const groups = new Map();
+  let format = null, skipped = 0;
+  const push = (date, exercise, memo, order, weight, reps) => {
+    const key = date + '|' + exercise;
+    if (!groups.has(key)) groups.set(key, { date, exercise, memo: memo || '', sets: [] });
+    groups.get(key).sets.push({ order, weight, reps });
+  };
+  if (idx('Exercise Name') !== -1 && idx('Date') !== -1) {
+    format = 'Strong';
+    for (const r of rows.slice(1)) {
+      const date = String(r[idx('Date')] || '').slice(0, 10);
+      const exercise = String(r[idx('Exercise Name')] || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !exercise) { skipped++; continue; }
+      let w = parseFloat(r[idx('Weight')]) || 0;
+      if (idx('Weight Unit') !== -1 && /lb/i.test(String(r[idx('Weight Unit')]))) w = Math.round(w * 0.453592 * 100) / 100;
+      const reps = parseInt(r[idx('Reps')]) || 0;
+      const order = idx('Set Order') !== -1 ? (parseInt(r[idx('Set Order')]) || 0) : 0;
+      const memo = idx('Workout Name') !== -1 ? String(r[idx('Workout Name')] || '') : '';
+      push(date, exercise, memo, order, w, reps);
+    }
+  } else if (idx('exercise_title') !== -1 && idx('start_time') !== -1) {
+    format = 'Hevy';
+    for (const r of rows.slice(1)) {
+      const date = String(r[idx('start_time')] || '').slice(0, 10);
+      const exercise = String(r[idx('exercise_title')] || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !exercise) { skipped++; continue; }
+      const w = parseFloat(r[idx('weight_kg')]) || 0;
+      const reps = parseInt(r[idx('reps')]) || 0;
+      const order = idx('set_index') !== -1 ? (parseInt(r[idx('set_index')]) || 0) : 0;
+      const memo = idx('title') !== -1 ? String(r[idx('title')] || '') : '';
+      push(date, exercise, memo, order, w, reps);
+    }
+  } else {
+    return { format: null, records: [], skipped: rows.length - 1 };
+  }
+  const records = [...groups.values()].map(g => ({
+    date: g.date, exercise: g.exercise, memo: g.memo,
+    setData: g.sets.sort((a, b) => a.order - b.order).map(s => ({ weight: s.weight, reps: s.reps })),
+  })).filter(g => g.setData.length);
+  return { format, records, skipped };
+}
+
+function importCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const { format, records, skipped } = parseWorkoutCSV(ev.target.result);
+      if (!format) { toast('⚠️ 対応形式のCSVではありません（Strong / Hevy の書き出しに対応）'); return; }
+      if (!records.length) { toast('⚠️ 取り込める記録がありませんでした'); return; }
+      const arr = load(K.w);
+      const sig = r => r.date + '|' + r.exercise + '|' + JSON.stringify(r.setData);
+      const existing = new Set(arr.map(sig));
+      let added = 0, dup = 0, sets = 0;
+      for (const r of records) {
+        if (existing.has(sig(r))) { dup++; continue; }
+        arr.push({ id: uid(), date: r.date, exercise: r.exercise, memo: r.memo, setData: r.setData });
+        added++; sets += r.setData.length;
+      }
+      save(K.w, arr);
+      document.getElementById('backup-modal').classList.remove('open');
+      renderHome(); renderWRecent(); renderTodayWorkout();
+      toast(`📥 ${format} から ${added}件（${sets}セット）を取り込みました` + (dup ? `／重複 ${dup}件はスキップ` : '') + (skipped ? `／読めない行 ${skipped}` : ''));
+    } catch (err) {
+      toast('⚠️ CSVの読み込みに失敗しました: ' + err.message);
     }
     e.target.value = '';
   };
