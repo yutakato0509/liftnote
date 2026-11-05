@@ -2094,7 +2094,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
         <button class="rest-preset-btn" onclick="setRestPreset(180)">3m</button>
       </div>
       <div class="rest-timer-controls">
+        <button class="rest-ctrl-btn rest-ctrl-reset" onclick="adjustRestTimer(-15)">−15s</button>
         <button class="rest-ctrl-btn rest-ctrl-start" id="rest-ctrl-start" onclick="toggleRestTimer()">▶ スタート</button>
+        <button class="rest-ctrl-btn rest-ctrl-reset" onclick="adjustRestTimer(15)">+15s</button>
         <button class="rest-ctrl-btn rest-ctrl-reset" onclick="resetRestTimer()">↺</button>
       </div>
       <div class="timer-hint">セットが終わったらここで休憩を計測しよう<br>バックグラウンドでも動作します</div>
@@ -5717,10 +5719,28 @@ function renderTodayWorkout() {
    REST TIMER
 ───────────────────────────────────────── */
 let _restTotal = 90, _restRemain = 90, _restRunning = false, _restInterval = null;
+let _wakeLock = null;
+async function acquireWakeLock() {
+  try { if ('wakeLock' in navigator) _wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { /* 非対応/拒否時は無視 */ }
+}
+function releaseWakeLock() {
+  try { if (_wakeLock) { _wakeLock.release(); _wakeLock = null; } } catch (e) { /* 無視 */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && _restRunning) acquireWakeLock();
+});
+function adjustRestTimer(delta) {
+  const wasFresh = (_restRemain === _restTotal) && !_restRunning;
+  _restRemain = Math.max(0, Math.min(3599, _restRemain + delta));
+  if (wasFresh) _restTotal = _restRemain;
+  if (_restRemain > 0) document.getElementById('rest-timer-display').classList.remove('done');
+  updateRestDisplay();
+}
 
 function setRestPreset(sec) {
   _restTotal = sec; _restRemain = sec; _restRunning = false;
   clearInterval(_restInterval);
+  releaseWakeLock();
   updateRestDisplay();
   document.querySelectorAll('.rest-preset-btn').forEach(b => b.classList.remove('active'));
   const map = {60:0, 90:1, 120:2, 180:3};
@@ -5732,16 +5752,19 @@ function setRestPreset(sec) {
 function toggleRestTimer() {
   if (_restRunning) {
     clearInterval(_restInterval); _restRunning = false;
+    releaseWakeLock();
     document.getElementById('rest-ctrl-start').textContent = '▶ 再開';
   } else {
     if (_restRemain <= 0) { _restRemain = _restTotal; document.getElementById('rest-timer-display').classList.remove('done'); }
     _restRunning = true;
+    acquireWakeLock();
     document.getElementById('rest-ctrl-start').textContent = '⏸ 一時停止';
     _restInterval = setInterval(() => {
       _restRemain--;
       updateRestDisplay();
       if (_restRemain <= 0) {
         clearInterval(_restInterval); _restRunning = false;
+        releaseWakeLock();
         document.getElementById('rest-timer-display').classList.add('done');
         document.getElementById('rest-ctrl-start').textContent = '▶ もう一度';
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -5751,6 +5774,7 @@ function toggleRestTimer() {
 }
 function resetRestTimer(rerender = true) {
   clearInterval(_restInterval); _restRunning = false;
+  releaseWakeLock();
   _restRemain = _restTotal;
   if (rerender) {
     updateRestDisplay();
