@@ -2102,6 +2102,27 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.4) sepia
       <div class="timer-hint">セットが終わったらここで休憩を計測しよう<br>バックグラウンドでも動作します</div>
     </div>
   </div>
+  <div class="card">
+    <div class="card-label">🏋️ プレート計算</div>
+    <div class="glow-line"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;">
+      <div class="stat-field" style="flex:1;">
+        <label>目標重量</label>
+        <input type="number" id="plate-target" placeholder="100" min="0" step="0.5" inputmode="decimal" style="font-size:22px;color:var(--accent);" oninput="calcPlates()">
+        <div class="stat-unit">kg</div>
+      </div>
+      <div class="stat-field" style="flex:1;">
+        <label>バーの重さ</label>
+        <select id="plate-bar" onchange="calcPlates()" style="font-size:18px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 8px;width:100%;">
+          <option value="20" selected>20kg（通常）</option>
+          <option value="15">15kg</option>
+          <option value="10">10kg</option>
+        </select>
+      </div>
+    </div>
+    <div id="plate-result" style="font-size:14px;line-height:1.7;color:var(--text);">目標重量を入力すると、片側に付けるプレートを表示します</div>
+    <div class="timer-hint">プレートは片側分（25 / 20 / 15 / 10 / 5 / 2.5 / 1.25kg）</div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -5785,6 +5806,32 @@ function resetRestTimer(rerender = true) {
 function updateRestDisplay() {
   const m = Math.floor(_restRemain / 60), s = _restRemain % 60;
   document.getElementById('rest-timer-display').textContent = m + ':' + String(s).padStart(2,'0');
+}
+
+/* ─────────────────────────────────────────
+   PLATE CALCULATOR（片側分のプレート構成）
+───────────────────────────────────────── */
+function calcPlates() {
+  const target = parseFloat(document.getElementById('plate-target').value);
+  const bar = parseFloat(document.getElementById('plate-bar').value) || 20;
+  const el = document.getElementById('plate-result');
+  if (isNaN(target) || target <= 0) { el.innerHTML = '目標重量を入力すると、片側に付けるプレートを表示します'; return; }
+  if (target < bar) { el.innerHTML = `⚠️ バー（${bar}kg）より軽い重量です`; return; }
+  if (target === bar) { el.innerHTML = `バーだけ（${bar}kg）です。プレートは不要`; return; }
+  let remain = (target - bar) / 2;
+  const plates = [25, 20, 15, 10, 5, 2.5, 1.25];
+  const used = [];
+  for (const p of plates) {
+    let n = 0;
+    while (remain >= p - 1e-9) { remain = Math.round((remain - p) * 100) / 100; n++; }
+    if (n > 0) used.push(`${p}kg × ${n}`);
+  }
+  const achieved = Math.round((target - remain * 2) * 100) / 100;
+  if (remain > 1e-9) {
+    el.innerHTML = `片側：<b style="color:var(--accent)">${used.join(' ＋ ') || 'なし'}</b><br>この構成だと合計 <b>${achieved}kg</b>（目標まであと ${Math.round(remain * 2 * 100) / 100}kg）`;
+  } else {
+    el.innerHTML = `片側：<b style="color:var(--accent)">${used.join(' ＋ ')}</b><br>合計ちょうど <b>${achieved}kg</b> です 🎯`;
+  }
 }
 
 /* ─────────────────────────────────────────
