@@ -2401,7 +2401,7 @@ function openSaveRoutineSheet() {
   if (!name || !name.trim()) return;
   const exercises = todayRecs.slice().reverse().map(r => ({
     exercise: r.exercise,
-    sets: (r.setData || []).map(s => ({ weight: s.weight || 0, reps: s.reps || 0 })),
+    sets: (r.setData || []).map(s => ({ weight: s.weight || 0, reps: s.reps || 0, rpe: s.rpe || 0 })),
   }));
   const routines = load(K.routines);
   routines.push({ id: uid(), name: name.trim(), exercises });
@@ -2499,7 +2499,7 @@ function loadSessionExercise(idx) {
   document.getElementById('w-sets-container').innerHTML = '';
   setRowCount = 0;
   if (ex.sets && ex.sets.length) {
-    ex.sets.forEach(s => addSetRow(s.weight || '', s.reps || '', s.assisted || ''));
+    ex.sets.forEach(s => addSetRow(s.weight || '', s.reps || '', s.assisted || '', s.rpe || ''));
   } else {
     autofillSets(ex.exercise);
     if (!document.querySelector('#w-sets-container .set-row')) addSetRow();
@@ -2552,6 +2552,7 @@ function saveDraft(type) {
           weight:   row.querySelector('.set-weight').value,
           reps:     row.querySelector('.set-reps').value,
           assisted: row.querySelector('.set-assisted') ? row.querySelector('.set-assisted').value : '',
+          rpe:      row.querySelector('.set-rpe') ? row.querySelector('.set-rpe').value : '',
         })),
       };
     } else if (type === 'c') {
@@ -2591,7 +2592,7 @@ function restoreDrafts() {
     if (dw.setData && dw.setData.length > 0) {
       document.getElementById('w-sets-container').innerHTML = '';
       setRowCount = 0;
-      dw.setData.forEach(s => addSetRow(s.weight, s.reps, s.assisted));
+      dw.setData.forEach(s => addSetRow(s.weight, s.reps, s.assisted, s.rpe || ''));
     }
     toast('📋 入力途中のデータを復元しました');
   }
@@ -2825,7 +2826,7 @@ function editRecord(type, id) {
     document.getElementById('w-sets-container').innerHTML = '';
     setRowCount = 0;
     if (data.setData && data.setData.length) {
-      data.setData.forEach(s => addSetRow(s.weight || '', s.reps || '', s.assisted || ''));
+      data.setData.forEach(s => addSetRow(s.weight || '', s.reps || '', s.assisted || '', s.rpe || ''));
     } else {
       // 旧形式の互換対応
       const n = data.sets || 1;
@@ -2895,7 +2896,7 @@ function autofillSets(exercise) {
   document.getElementById('w-sets-container').innerHTML = '';
   setRowCount = 0;
   if (last.setData && last.setData.length) {
-    last.setData.forEach(s => addSetRow(s.weight || '', s.reps || '', s.assisted || ''));
+    last.setData.forEach(s => addSetRow(s.weight || '', s.reps || '', s.assisted || '', s.rpe || ''));
   } else {
     const n = last.sets || 1;
     for (let i = 0; i < n; i++) addSetRow(i === 0 ? (last.weight || '') : '', last.reps || '');
@@ -4735,7 +4736,7 @@ async function undoDeletePhoto() {
 ───────────────────────────────────────── */
 let setRowCount = 0;
 
-function addSetRow(weight = '', reps = '', assisted = '') {
+function addSetRow(weight = '', reps = '', assisted = '', rpe = '') {
   setRowCount++;
   const n = setRowCount;
   const container = document.getElementById('w-sets-container');
@@ -4766,6 +4767,11 @@ function addSetRow(weight = '', reps = '', assisted = '') {
         <input type="number" class="set-assisted" value="${assisted}" placeholder="0" min="0" inputmode="numeric">
         <div class="stat-unit">reps</div>
       </div>
+      <div class="stat-field" style="flex:.65">
+        <label>RPE</label>
+        <input type="number" class="set-rpe" value="${rpe}" placeholder="—" min="0" max="10" step="0.5" inputmode="decimal">
+        <div class="stat-unit">/10</div>
+      </div>
     </div>
     <button class="set-del-btn" onclick="removeSetRow('set-row-${n}')">✕</button>
     <div class="set-prev-hint" id="hint-set-${n}"></div>`;
@@ -4788,6 +4794,7 @@ function getSetData() {
     weight:   parseFloat(row.querySelector('.set-weight').value)   || 0,
     reps:     parseInt(row.querySelector('.set-reps').value)       || 0,
     assisted: parseInt(row.querySelector('.set-assisted').value)   || 0,
+    rpe:      row.querySelector('.set-rpe') ? (parseFloat(row.querySelector('.set-rpe').value) || 0) : 0,
   })).filter(s => s.reps > 0);
 }
 
@@ -5566,7 +5573,7 @@ function updateSetPrevHints(exercise) {
     if (!hint) return;
     if (i < sets.length) {
       const s = sets[i];
-      hint.textContent = `前回: ${s.weight > 0 ? s.weight+'kg' : '自重'} × ${s.reps}rep (${fmtDateFull(prev.date)})`;
+      hint.textContent = `前回: ${s.weight > 0 ? s.weight+'kg' : '自重'} × ${s.reps}rep${s.rpe ? ' RPE'+s.rpe : ''} (${fmtDateFull(prev.date)})`;
     } else {
       hint.textContent = '';
     }
@@ -5844,7 +5851,7 @@ function renderTodayWorkout() {
 
   list.innerHTML = recs.map(r => {
     const setsStr = r.setData
-      ? r.setData.map((s,i) => `${i+1}. ${s.weight>0?s.weight+'kg':'自重'}×${s.reps}`).join(' / ')
+      ? r.setData.map((s,i) => `${i+1}. ${s.weight>0?s.weight+'kg':'自重'}×${s.reps}${s.rpe?' RPE'+s.rpe:''}`).join(' / ')
       : `${r.weight>0?r.weight+'kg':'自重'}×${r.reps}×${r.sets}set`;
     return `
       <div class="today-done-item">
