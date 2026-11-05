@@ -2343,6 +2343,38 @@ function save(k, d) {
 let sessionQueue = [];
 let sessionQueueIdx = 0;
 
+const STARTER_ROUTINES = [
+  { name: 'プッシュ（胸・肩・三頭）', exercises: [
+    { exercise: 'ベンチプレス', sets: [{weight:40,reps:10},{weight:40,reps:10},{weight:40,reps:10}] },
+    { exercise: 'ショルダープレス', sets: [{weight:20,reps:10},{weight:20,reps:10},{weight:20,reps:10}] },
+    { exercise: 'サイドレイズ', sets: [{weight:6,reps:12},{weight:6,reps:12},{weight:6,reps:12}] },
+    { exercise: 'ケーブルプッシュダウン', sets: [{weight:20,reps:12},{weight:20,reps:12}] },
+  ]},
+  { name: 'プル（背中・二頭）', exercises: [
+    { exercise: 'ラットプルダウン', sets: [{weight:40,reps:10},{weight:40,reps:10},{weight:40,reps:10}] },
+    { exercise: 'ベントオーバーロウ', sets: [{weight:40,reps:10},{weight:40,reps:10},{weight:40,reps:10}] },
+    { exercise: 'フェイスプル', sets: [{weight:15,reps:15},{weight:15,reps:15}] },
+    { exercise: 'バーベルカール', sets: [{weight:20,reps:10},{weight:20,reps:10}] },
+  ]},
+  { name: 'レッグ（脚）', exercises: [
+    { exercise: 'スクワット', sets: [{weight:60,reps:8},{weight:60,reps:8},{weight:60,reps:8}] },
+    { exercise: 'ルーマニアンデッドリフト', sets: [{weight:60,reps:10},{weight:60,reps:10}] },
+    { exercise: 'レッグカール', sets: [{weight:30,reps:12},{weight:30,reps:12}] },
+    { exercise: 'カーフレイズ', sets: [{weight:40,reps:15},{weight:40,reps:15}] },
+  ]},
+];
+function seedStarterRoutines() {
+  try {
+    if (localStorage.getItem('ln_starters_seeded')) return;
+    const routines = load(K.routines);
+    if (!routines.length) {
+      const seeded = STARTER_ROUTINES.map(r => ({ id: uid(), name: r.name, exercises: r.exercises }));
+      localStorage.setItem(K.routines, JSON.stringify(seeded));
+    }
+    localStorage.setItem('ln_starters_seeded', '1');
+  } catch (e) { /* 失敗しても通常起動を妨げない */ }
+}
+
 function renderRoutineCards() {
   const routines = load(K.routines);
   const el = document.getElementById('routine-cards');
@@ -2625,6 +2657,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderDayTagChips();
   renderHome();
   renderWRecent();
+  seedStarterRoutines();
   renderRoutineCards();
   renderCRecent();
   renderBRecent();
