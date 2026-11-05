@@ -2385,6 +2385,7 @@ function renderRoutineCards() {
   el.innerHTML = routines.map(r => `
     <div class="routine-card" onclick="loadRoutine('${r.id}')">
       <button class="routine-card-del" type="button" onclick="event.stopPropagation();deleteRoutine('${r.id}')">✕</button>
+      <button class="routine-card-del" type="button" style="right:34px;" onclick="event.stopPropagation();shareRoutine('${r.id}')">🔗</button>
       <div class="routine-card-name">${esc(r.name)}</div>
       <div class="routine-card-count">${r.exercises.length}種目</div>
     </div>`).join('');
@@ -2427,6 +2428,54 @@ function deleteRoutine(id) {
   localStorage.setItem(K.routines, JSON.stringify(routines));
   renderRoutineCards();
   toast('🗑 ルーティンを削除しました');
+}
+
+/* ─────────────────────────────────────────
+   ROUTINE SHARE（URLで渡して取り込む）
+───────────────────────────────────────── */
+function encodeRoutineData(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function decodeRoutineData(str) {
+  const bin = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+async function shareRoutine(id) {
+  const r = load(K.routines).find(x => x.id === id);
+  if (!r) return;
+  const data = encodeRoutineData({ name: r.name, exercises: r.exercises });
+  const url = location.origin + location.pathname + '?routine=' + data;
+  if (navigator.share) {
+    try { await navigator.share({ title: 'LiftNote ルーティン', text: `ルーティン「${r.name}」を共有`, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(url); toast('🔗 共有リンクをコピーしました'); }
+  catch (e) { prompt('共有リンクをコピーしてください', url); }
+}
+function checkRoutineImport() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const data = params.get('routine');
+    if (!data) return;
+    history.replaceState({}, '', location.pathname);
+    const obj = decodeRoutineData(data);
+    if (!obj || !obj.name || !Array.isArray(obj.exercises) || !obj.exercises.length) return;
+    const exercises = obj.exercises.filter(ex => ex && ex.exercise && Array.isArray(ex.sets)).map(ex => ({
+      exercise: String(ex.exercise),
+      sets: ex.sets.map(s => ({ weight: parseFloat(s.weight) || 0, reps: parseInt(s.reps) || 0 })),
+    }));
+    if (!exercises.length) return;
+    if (!confirm(`共有されたルーティン「${obj.name}」（${exercises.length}種目）を追加しますか？`)) return;
+    const routines = load(K.routines);
+    routines.push({ id: uid(), name: String(obj.name), exercises });
+    localStorage.setItem(K.routines, JSON.stringify(routines));
+    localStorage.setItem('ln_starters_seeded', '1');
+    renderRoutineCards();
+    toast(`📥 ルーティン「${obj.name}」を追加しました`);
+  } catch (e) { /* 不正なリンクでは何もしない */ }
 }
 
 function renderSessionQueue() {
@@ -2659,6 +2708,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderWRecent();
   seedStarterRoutines();
   renderRoutineCards();
+  checkRoutineImport();
   renderCRecent();
   renderBRecent();
   renderTodayWorkout();
