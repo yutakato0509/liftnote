@@ -4937,6 +4937,13 @@ function prevDay(dateStr) {
   return new Date(Date.UTC(y, m - 1, d - 1, 12)).toISOString().slice(0, 10);
 }
 
+function loadStreakRepairs() {
+  try { return JSON.parse(localStorage.getItem('ln_streak_repairs') || '[]'); } catch (e) { return []; }
+}
+function saveStreakRepairs(list) {
+  try { localStorage.setItem('ln_streak_repairs', JSON.stringify(list)); } catch (e) { /* 無視 */ }
+}
+
 function calcStreak(records) {
   if (!records.length) return 0;
   const dates = new Set(records.map(r => r.date));
@@ -4944,13 +4951,39 @@ function calcStreak(records) {
   const { dow } = parseDate(t);
   const daysToMonday = dow === 0 ? 6 : dow - 1;
   const [ty, tm, td] = t.split('-').map(Number);
+  const weekHas = (monStr, sunStr) => [...dates].some(d => d >= monStr && d <= sunStr);
+  // 記録が入った週の修復は掃除する（その月の枠を返す）
+  let repairs = loadStreakRepairs();
+  const cleaned = repairs.filter(monStr => {
+    const [y, m, d] = monStr.split('-').map(Number);
+    const sunStr = new Date(Date.UTC(y, m - 1, d + 6, 12)).toISOString().slice(0, 10);
+    return !weekHas(monStr, sunStr);
+  });
+  if (cleaned.length !== repairs.length) { repairs = cleaned; saveStreakRepairs(repairs); }
   let streak = 0;
+  let gapBridged = false;
   for (let w = 0; w < 520; w++) {
     const monDt = new Date(Date.UTC(ty, tm - 1, td - daysToMonday - w * 7, 12));
     const monStr = monDt.toISOString().slice(0, 10);
     const sunStr = new Date(Date.UTC(monDt.getUTCFullYear(), monDt.getUTCMonth(), monDt.getUTCDate() + 6, 12)).toISOString().slice(0, 10);
-    const hasWorkout = [...dates].some(d => d >= monStr && d <= sunStr);
-    if (!hasWorkout) { if (w === 0) continue; break; }
+    const hasWorkout = weekHas(monStr, sunStr);
+    if (!hasWorkout) {
+      if (w === 0) continue;
+      // ストリーク修復権：月に1回だけ、1週間の空白を橋渡しする
+      const monthKey = monStr.slice(0, 7);
+      const alreadyRepaired = repairs.includes(monStr);
+      const monthUsed = repairs.some(r => r.slice(0, 7) === monthKey);
+      if (streak > 0 && !gapBridged && (alreadyRepaired || !monthUsed)) {
+        if (!alreadyRepaired) {
+          repairs.push(monStr); saveStreakRepairs(repairs);
+          setTimeout(() => toast('🛡️ ストリーク修復権で継続を守りました（月に1回まで）'), 800);
+        }
+        gapBridged = true;
+        streak++;
+        continue;
+      }
+      break;
+    }
     streak++;
   }
   return streak;

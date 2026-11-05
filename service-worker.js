@@ -1,4 +1,4 @@
-const CACHE = 'liftnote-v8';
+const CACHE = 'liftnote-v9';
 const SHELL = [self.registration.scope];
 
 self.addEventListener('install', e => {
