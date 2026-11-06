@@ -23,3 +23,7 @@ Fitness-tracker
   自分自身が筋トレをしていて「使いやすい記録アプリが欲しい」とい
   う自己課題から開発。
   トレーナー向けSaaS「PT Manager」の開発経験につながっています。
+
+## デプロイ
+公式URLは GitHub Pages のみ： https://yutakato0509.github.io/liftnote/
+（Netlify / Vercel / Cloudflare への公開は廃止済み。旧URLは古いビルドのまま更新されません）
